@@ -10,18 +10,11 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState({ loading: true, ok: false, mongoConnected: false, isSuperAdmin: false, user: null, superAdminUsername: "mikile" });
 
-  const [groupName, setGroupName] = useState("");
-  const [groupEmoji, setGroupEmoji] = useState("🔥");
-  const [groupDesc, setGroupDesc] = useState("");
-
   const [emojiInput, setEmojiInput] = useState("");
   const [emojiList, setEmojiList] = useState([]);
 
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState("");
-  const [pollGroupSlug, setPollGroupSlug] = useState("");
-  const [pollQuestion, setPollQuestion] = useState("");
-  const [pollOptions, setPollOptions] = useState("");
 
   const filteredGroups = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -50,14 +43,16 @@ export default function AdminPage() {
   async function loadStatus() {
     const res = await fetch("/api/admin/status", { cache: "no-store" });
     const data = await res.json();
-    setStatus({
+    const next = {
       loading: false,
       ok: res.ok,
       mongoConnected: Boolean(data.mongoConnected),
       isSuperAdmin: Boolean(data.isSuperAdmin),
       user: data.user || null,
       superAdminUsername: data.superAdminUsername || "mikile",
-    });
+    };
+    setStatus(next);
+    return next;
   }
 
   const selectedA = groups.find((g) => g.slug === aSlug);
@@ -72,11 +67,16 @@ export default function AdminPage() {
   }, [selectedA?.name, selectedB?.name]);
 
   useEffect(() => {
-    loadStatus().catch(() => {
+    async function init() {
+      const next = await loadStatus();
+      if (next.isSuperAdmin) {
+        await Promise.all([loadEmojis(), loadGroups()]);
+      }
+    }
+
+    init().catch(() => {
       setStatus((prev) => ({ ...prev, loading: false, ok: false }));
     });
-    loadEmojis().catch(() => {});
-    loadGroups().catch(() => {});
   }, []);
 
   async function handleCreateWar() {
@@ -99,64 +99,6 @@ export default function AdminPage() {
       } else {
         setMessage("Failed to create war");
       }
-    }
-  }
-
-  async function handleCreateGroup() {
-    if (!groupName.trim()) {
-      setMessage("Group name is required");
-      return;
-    }
-
-    const res = await fetch("/api/mahbers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: groupName,
-        emoji: groupEmoji || "🔥",
-        desc: groupDesc,
-      }),
-    });
-
-    if (res.ok) {
-      setMessage("Group created successfully");
-      setGroupName("");
-      setGroupDesc("");
-      await loadGroups();
-    } else {
-      setMessage("Failed to create group");
-    }
-  }
-
-  async function handleCreatePoll() {
-    const options = pollOptions
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-    if (!pollGroupSlug || !pollQuestion.trim() || options.length < 2) {
-      setMessage("Pick group, add question, and at least 2 options");
-      return;
-    }
-
-    const res = await fetch("/api/mahbers", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "create_poll",
-        slug: pollGroupSlug,
-        question: pollQuestion.trim(),
-        options,
-      }),
-    });
-
-    if (res.ok) {
-      setMessage("Poll created successfully");
-      setPollQuestion("");
-      setPollOptions("");
-      await loadGroups();
-    } else {
-      setMessage("Failed to create poll");
     }
   }
 
@@ -247,7 +189,13 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: 16, maxWidth: 980 }}>
+        {!status.loading && !status.isSuperAdmin ? (
+          <div style={{ border: "1px solid #4a2a33", borderRadius: 12, padding: 14, background: "#1a1014", maxWidth: 980, color: "#ffb4c4" }}>
+            Access denied. Only @{status.superAdminUsername} can access admin controls.
+          </div>
+        ) : null}
+
+        {status.isSuperAdmin ? <div style={{ display: "grid", gap: 16, maxWidth: 980 }}>
         <section style={panelStyle}>
           <h2 style={sectionTitleStyle}>War Control</h2>
           <label style={labelStyle}>Mahber A</label>
@@ -324,20 +272,6 @@ export default function AdminPage() {
               }}
             >
               One Click Apply All
-            </button>
-          </div>
-          <input
-            style={inputStyle}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search groups..."
-          />
-
-          <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-            {filteredGroups.length === 0 ? (
-              <div style={{ color: "#9aa5bf", fontSize: 13 }}>No created groups yet.</div>
-            ) : (
-              filteredGroups.map((item) => (
                 <div key={item.id || item.slug} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#0b1220", border: "1px solid #2f4465", borderRadius: 10, padding: "10px 12px" }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
@@ -361,42 +295,7 @@ export default function AdminPage() {
             )}
           </div>
         </section>
-
-        <section style={panelStyle}>
-          <h2 style={sectionTitleStyle}>Poll Creation</h2>
-          <label style={labelStyle}>Group</label>
-          <select
-            style={inputStyle}
-            value={pollGroupSlug}
-            onChange={(e) => setPollGroupSlug(e.target.value)}
-          >
-            <option value="">Select group</option>
-            {groups.map((group) => (
-              <option key={group.slug || group.id} value={group.slug}>
-                {group.name}
-              </option>
-            ))}
-          </select>
-
-          <label style={labelStyle}>Question</label>
-          <input
-            style={inputStyle}
-            value={pollQuestion}
-            onChange={(e) => setPollQuestion(e.target.value)}
-            placeholder="Best song this week?"
-          />
-
-          <label style={labelStyle}>Options (comma separated)</label>
-          <input
-            style={inputStyle}
-            value={pollOptions}
-            onChange={(e) => setPollOptions(e.target.value)}
-            placeholder="Option A, Option B, Option C"
-          />
-
-          <button onClick={handleCreatePoll} style={primaryBtnStyle}>Create Poll</button>
-        </section>
-      </div>
+      </div> : null}
 
       {message ? <p style={{ marginTop: 14, color: "#9aa5bf" }}>{message}</p> : null}
     </main>
