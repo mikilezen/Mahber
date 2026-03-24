@@ -1,6 +1,6 @@
 # Mahber
 
-![Mahber Logo](/assets/Group.png)
+![Mahber Logo](public/assets/Group.png)
 
 Mahber is Ethiopian community platform for Ethiopian mahbers with real-time style engagement flows, role-based admin tools, social authentication, and MongoDB-backed persistence.
 
