@@ -1,8 +1,6 @@
-import dynamic from "next/dynamic";
+"use client";
 
-const MahberSocial = dynamic(() => import("../mahber-social"), {
-  ssr: false,
-});
+import MahberSocial from "../mahber-social";
 
 export default function HomePage() {
   return <MahberSocial />;
