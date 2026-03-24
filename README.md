@@ -2,7 +2,7 @@
 
 ![Mahber Logo](/assets/Group.png)
 
-Mahber is a Next.js community platform for Ethiopian mahbers with real-time style engagement flows, role-based admin tools, social authentication, and MongoDB-backed persistence.
+Mahber is Ethiopian community platform for Ethiopian mahbers with real-time style engagement flows, role-based admin tools, social authentication, and MongoDB-backed persistence.
 
 ## Highlights
 
