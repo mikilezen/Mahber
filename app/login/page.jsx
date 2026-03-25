@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<main style={{ minHeight: "100vh", background: "#07070A", color: "#eaf0ff", padding: 24 }} />}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const params = useSearchParams();
   const [providers, setProviders] = useState({ tiktok: true, google: false });
   const msg = useMemo(() => {
