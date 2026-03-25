@@ -115,6 +115,8 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-
 .btn-join{flex:1;padding:10px;font-size:13px;background:var(--yellow);color:#000}
 .btn-join.on{background:var(--s3);color:var(--muted);border:1px solid var(--border)}
 .btn-icon{padding:10px 13px;font-size:14px;background:var(--s3);border:1px solid var(--border);color:var(--txt)}
+.btn.click-pop{animation:btnPop .32s ease}
+.btn-icon.click-pop{animation:btnPop .32s ease,shareWiggle .32s ease}
 .trend-wrap{padding:20px 18px 100px;position:relative;z-index:1}
 .section-title-big{font-family:'Black Han Sans',sans-serif;font-size:clamp(28px,6vw,48px);letter-spacing:3px;margin-bottom:4px}
 .section-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
@@ -156,6 +158,8 @@ textarea.form-input{resize:vertical;min-height:80px}
 .create-success-emoji{font-size:56px;margin-bottom:12px}
 .create-success h2{font-family:'Black Han Sans',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green);margin-bottom:8px}
 .create-success p{font-size:14px;color:var(--muted);line-height:1.6}
+@keyframes btnPop{0%{transform:scale(1)}45%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes shareWiggle{0%{rotate:0deg}35%{rotate:-12deg}70%{rotate:10deg}100%{rotate:0deg}}
 @media(max-width:480px){.grid{grid-template-columns:1fr;padding:4px 12px 100px}.feed-header,.wars-wrap,.trend-wrap,.create-wrap{padding-left:12px;padding-right:12px}.tabs .tab{font-size:11px;padding:9px 4px}.brand-logo{width:26px;height:26px}}
 `;
 
