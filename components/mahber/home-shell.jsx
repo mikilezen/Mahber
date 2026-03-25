@@ -330,6 +330,31 @@ export default function HomeShell() {
     };
   }, []);
 
+  useEffect(() => {
+    if (tab !== "create") return;
+
+    let active = true;
+
+    async function refreshEmojisForCreate() {
+      const emojisRes = await requestJson("/api/emojis");
+      if (!active || !emojisRes.ok) return;
+
+      const data = emojisRes.data || {};
+      const next = toEmojiOptions(data.items);
+      setEmojiOptions(next);
+      setCreateForm((prev) => {
+        const keepCurrent = next.includes(prev.emoji);
+        return { ...prev, emoji: keepCurrent ? prev.emoji : (next[0] || DEFAULT_EMOJI_OPTIONS[0]) };
+      });
+    }
+
+    refreshEmojisForCreate();
+
+    return () => {
+      active = false;
+    };
+  }, [tab]);
+
   const loadMoreMahbers = useCallback(async () => {
     if (initialLoading || loadingMore || !hasMore || !nextCursor) return;
 
