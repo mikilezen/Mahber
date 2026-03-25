@@ -4,6 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 
 const ADMIN_GROUPS_PAGE_SIZE = 50;
 
+function normalizeEmojiItem(item) {
+  const value = String(item?.value || item?.emoji || item?.imageUrl || "").trim();
+  const imageUrl = String(item?.imageUrl || "").trim();
+  const emoji = String(item?.emoji || "").trim();
+  const kind = item?.kind || (imageUrl ? "image" : "emoji");
+  return { value, imageUrl, emoji, kind };
+}
+
 export default function AdminClient() {
   const [status, setStatus] = useState({ loading: true, mongoConnected: false, user: null, superAdminUsername: "mikilezen" });
   const [initialLoading, setInitialLoading] = useState(true);
@@ -22,6 +30,7 @@ export default function AdminClient() {
   const [groupsCursorHistory, setGroupsCursorHistory] = useState([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [emojiInput, setEmojiInput] = useState("");
+  const [emojiImageData, setEmojiImageData] = useState("");
   const [emojiList, setEmojiList] = useState([]);
 
   const [query, setQuery] = useState("");
@@ -152,7 +161,7 @@ export default function AdminClient() {
       setGroupsCursor("0");
       setGroupsCursorHistory([]);
       setGroupsHasMore(Boolean(groupsData.hasMore));
-      setEmojiList(Array.isArray(emojisData.items) ? emojisData.items.map((x) => x.emoji) : []);
+      setEmojiList(Array.isArray(emojisData.items) ? emojisData.items.map(normalizeEmojiItem).filter((x) => x.value) : []);
     }
 
     init()
@@ -205,8 +214,10 @@ export default function AdminClient() {
 
   async function handleAddEmoji() {
     const emoji = emojiInput.trim();
-    if (!emoji) {
-      setMessage("Emoji input is required");
+    const imageUrl = emojiImageData.trim();
+
+    if (!emoji && !imageUrl) {
+      setMessage("Add emoji text or upload an image");
       return;
     }
 
@@ -214,28 +225,32 @@ export default function AdminClient() {
       const res = await fetch("/api/emojis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emoji }),
+        body: JSON.stringify({ emoji, imageUrl }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        setMessage("Failed to add emoji");
+        setMessage(data?.error || "Failed to add emoji");
         return;
       }
 
       setEmojiInput("");
-      setEmojiList((prev) => (prev.includes(emoji) ? prev : [...prev, emoji]));
-      setMessage("Emoji added");
+      setEmojiImageData("");
+      const nextItem = normalizeEmojiItem(data?.item || { emoji, imageUrl });
+      setEmojiList((prev) => (prev.some((x) => x.value === nextItem.value) ? prev : [...prev, nextItem]));
+      setMessage(nextItem.kind === "image" ? "Emoji image added" : "Emoji added");
     } catch {
       setMessage("Failed to add emoji");
     }
   }
 
-  async function handleDeleteEmoji(emoji) {
+  async function handleDeleteEmoji(item) {
     try {
       const res = await fetch("/api/emojis", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emoji }),
+        body: JSON.stringify({ value: item?.value, emoji: item?.emoji, imageUrl: item?.imageUrl }),
       });
 
       if (!res.ok) {
@@ -243,11 +258,28 @@ export default function AdminClient() {
         return;
       }
 
-      setEmojiList((prev) => prev.filter((x) => x !== emoji));
+      setEmojiList((prev) => prev.filter((x) => x.value !== item?.value));
       setMessage("Emoji removed");
     } catch {
       setMessage("Failed to remove emoji");
     }
+  }
+
+  function handleEmojiImageChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      setEmojiImageData(dataUrl);
+      setMessage(`Loaded image: ${file.name}`);
+    };
+    reader.onerror = () => {
+      setMessage("Failed to read image file");
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
   }
 
   async function handleApproveAllRequests() {
@@ -405,15 +437,26 @@ export default function AdminClient() {
         <section style={panelStyle}>
           <h2 style={sectionTitleStyle}>Emoji Control</h2>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <input style={{ ...inputStyle, maxWidth: 220 }} value={emojiInput} onChange={(e) => setEmojiInput(e.target.value)} placeholder="Add emoji" />
+            <input style={{ ...inputStyle, maxWidth: 220 }} value={emojiInput} onChange={(e) => setEmojiInput(e.target.value)} placeholder="Add emoji text" />
+            <input type="file" accept="image/*" onChange={handleEmojiImageChange} style={{ color: "#9aa5bf", maxWidth: 260 }} />
             <button onClick={handleAddEmoji} style={primaryBtnStyle}>Add Emoji</button>
+            {emojiImageData ? (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid #2f4465", borderRadius: 8, padding: "4px 8px", background: "#0b1220" }}>
+                <img src={emojiImageData} alt="emoji preview" width={26} height={26} style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover" }} />
+                <button onClick={() => setEmojiImageData("")} style={chipDangerBtnStyle}>Clear</button>
+              </div>
+            ) : null}
           </div>
 
           <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {emojiList.map((emoji) => (
-              <div key={emoji} style={chipWrapStyle}>
-                <span style={{ fontSize: 18 }}>{emoji}</span>
-                <button onClick={() => handleDeleteEmoji(emoji)} style={chipDangerBtnStyle}>Remove</button>
+            {emojiList.map((item) => (
+              <div key={item.value} style={chipWrapStyle}>
+                {item.kind === "image" ? (
+                  <img src={item.imageUrl || item.value} alt="emoji" width={22} height={22} style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }} />
+                ) : (
+                  <span style={{ fontSize: 18 }}>{item.emoji || item.value}</span>
+                )}
+                <button onClick={() => handleDeleteEmoji(item)} style={chipDangerBtnStyle}>Remove</button>
               </div>
             ))}
           </div>

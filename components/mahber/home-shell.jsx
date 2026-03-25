@@ -196,7 +196,13 @@ function mapItem(item) {
 
 function toEmojiOptions(items) {
   if (!Array.isArray(items)) return DEFAULT_EMOJI_OPTIONS;
-  const unique = Array.from(new Set(items.map((x) => String(x?.emoji || "").trim()).filter(Boolean)));
+  const unique = Array.from(
+    new Set(
+      items
+        .map((x) => String(x?.value || x?.emoji || x?.imageUrl || "").trim())
+        .filter(Boolean)
+    )
+  );
   return unique.length > 0 ? unique : DEFAULT_EMOJI_OPTIONS;
 }
 

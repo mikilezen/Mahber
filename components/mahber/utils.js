@@ -28,6 +28,14 @@ export function getMahberRouteKey(m) {
   return String(m?.slug || m?.id || "").trim();
 }
 
+export function isImageEmojiValue(value) {
+  const v = String(value || "").trim();
+  if (!v) return false;
+  if (/^data:image\//i.test(v)) return true;
+  if (/^https?:\/\//i.test(v) && /\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(v)) return true;
+  return false;
+}
+
 function toNum(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;

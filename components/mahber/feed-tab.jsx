@@ -1,5 +1,5 @@
 import { ET_GREEN, ET_RED, ET_YELLOW } from "./constants";
-import { fmt, fmtHeat, getMahberRouteKey, getTier } from "./utils";
+import { fmt, fmtHeat, getMahberRouteKey, getTier, isImageEmojiValue } from "./utils";
 
 function normalizeExternalUrl(value) {
   const raw = String(value || "").trim();
@@ -29,6 +29,13 @@ function getAvatarUrl(m) {
   if (direct) return direct;
   const key = encodeURIComponent(String(m?.creator || m?.name || "Mahber"));
   return `https://ui-avatars.com/api/?name=${key}&background=111827&color=F0EDE6&size=64`;
+}
+
+function EmojiBadge({ value }) {
+  if (isImageEmojiValue(value)) {
+    return <img src={value} alt="emoji" style={{ width: 38, height: 38, borderRadius: 10, objectFit: "cover" }} />;
+  }
+  return <>{value}</>;
 }
 
 export default function FeedTab({
@@ -96,7 +103,7 @@ export default function FeedTab({
               <div className="card-stripe" style={{ background: "linear-gradient(90deg,var(--red),var(--yellow),var(--green))" }} />
               <div className="card-body">
                 <div className="card-top">
-                  <div className="card-emoji">{m.emoji}</div>
+                  <div className="card-emoji"><EmojiBadge value={m.emoji} /></div>
                   <div className="tier-badge">
                     <div className="heat-val" style={{ color: tier.color }}>{fmtHeat(m.heat)}</div>
                   </div>

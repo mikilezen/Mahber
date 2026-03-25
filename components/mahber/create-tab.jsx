@@ -1,3 +1,20 @@
+import { isImageEmojiValue } from "./utils";
+
+function EmojiValue({ value, size = 32 }) {
+  if (isImageEmojiValue(value)) {
+    return (
+      <img
+        src={value}
+        alt="emoji"
+        width={size}
+        height={size}
+        style={{ width: size, height: size, objectFit: "cover", borderRadius: 8 }}
+      />
+    );
+  }
+  return <>{value}</>;
+}
+
 export default function CreateTab({
   createForm,
   setCreateForm,
@@ -10,7 +27,9 @@ export default function CreateTab({
     return (
       <section className="create-wrap">
         <div className="create-success">
-          <div className="create-success-emoji">{createForm.emoji}</div>
+          <div className="create-success-emoji" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+            <EmojiValue value={createForm.emoji} size={56} />
+          </div>
           <h2>MAHBER IS LIVE</h2>
           <p>Your mahber has been created from database-backed flow.</p>
           <button className="btn-create" style={{ maxWidth: 240, margin: "0 auto", display: "block" }} onClick={() => setCreateDone(false)}>
@@ -30,7 +49,9 @@ export default function CreateTab({
 
       {createForm.name ? (
         <div className="create-preview">
-          <div style={{ fontSize: 32, marginBottom: 6 }}>{createForm.emoji}</div>
+          <div style={{ fontSize: 32, marginBottom: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 36 }}>
+            <EmojiValue value={createForm.emoji} size={32} />
+          </div>
           <div style={{ fontFamily: "'Black Han Sans',sans-serif", fontSize: 20, letterSpacing: 1, marginBottom: 4 }}>{createForm.name}</div>
           <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>{createForm.desc || "Your description here..."}</div>
         </div>
@@ -84,7 +105,7 @@ export default function CreateTab({
               aria-label={`Pick ${emoji}`}
               title={`Pick ${emoji}`}
             >
-              {emoji}
+              <EmojiValue value={emoji} size={24} />
             </button>
           ))}
           {emojiOptions.length === 0 ? <div style={{ fontSize: 12, color: "var(--muted)" }}>No emojis available right now.</div> : null}

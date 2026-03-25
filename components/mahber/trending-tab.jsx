@@ -1,4 +1,4 @@
-import { computeRankScore, fmt, fmtHeat, getMahberRouteKey, getTier } from "./utils";
+import { computeRankScore, fmt, fmtHeat, getMahberRouteKey, getTier, isImageEmojiValue } from "./utils";
 
 function normalizeExternalUrl(value) {
   const raw = String(value || "").trim();
@@ -28,6 +28,13 @@ function getAvatarUrl(m) {
   if (direct) return direct;
   const key = encodeURIComponent(String(m?.creator || m?.name || "Mahber"));
   return `https://ui-avatars.com/api/?name=${key}&background=111827&color=F0EDE6&size=64`;
+}
+
+function EmojiBadge({ value }) {
+  if (isImageEmojiValue(value)) {
+    return <img src={value} alt="emoji" style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }} />;
+  }
+  return <>{value}</>;
 }
 
 export default function TrendingTab({ mahbers, toast }) {
@@ -69,7 +76,7 @@ export default function TrendingTab({ mahbers, toast }) {
             }}
           >
             <div className={`rank-num ${i < 3 ? "top3" : ""}`}>#{i + 1}</div>
-            <div className="rank-emoji">{m.emoji}</div>
+            <div className="rank-emoji"><EmojiBadge value={m.emoji} /></div>
             <div className="rank-info">
               <div className="rank-name-row">
                 <a href={tiktokUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title="Open TikTok profile">
