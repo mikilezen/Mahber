@@ -11,6 +11,18 @@ export default function sitemap() {
       priority: 1,
     },
     {
+      url: `${SITE_URL}/policy`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${SITE_URL}/llm`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: `${SITE_URL}/api/mahbers`,
       lastModified: now,
       changeFrequency: "hourly",
