@@ -151,6 +151,22 @@ export default function UserPage() {
 
           <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button
+              onClick={() => {
+                window.location.href = "/#create";
+              }}
+              style={{
+                border: "1px solid #2e9d5b",
+                background: "#1f7a45",
+                color: "#fff",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              + Create Mahber
+            </button>
+            <button
               onClick={toggleTheme}
               style={{
                 border: "1px solid var(--theme-border-2)",
