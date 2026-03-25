@@ -471,6 +471,44 @@ export async function PATCH(request) {
       return NextResponse.json({ ok: true });
     }
 
+    if (body.action === "delete_owned") {
+      const user = ensureSessionUser(request);
+      const slug = typeof body.slug === "string" ? body.slug.trim() : "";
+
+      if (!slug) {
+        return NextResponse.json({ ok: false, error: "slug_required" }, { status: 400 });
+      }
+
+      const db = await getMongoDbOrThrow();
+      const current = await db.collection("mahbers").findOne(
+        { slug },
+        { projection: { ownerUsername: 1 } }
+      );
+
+      if (!current) {
+        return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+      }
+
+      const currentUsername = normalizeUsername(user.username);
+      const ownerUsername = normalizeUsername(current.ownerUsername);
+      const isOwner = ownerUsername && currentUsername === ownerUsername;
+      const isSuperAdmin = isSuperAdminUsername(currentUsername);
+
+      if (!isOwner && !isSuperAdmin) {
+        return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+      }
+
+      await db.collection("mahbers").deleteOne({ slug });
+      await db.collection("votes").deleteMany({
+        $or: [
+          { targetId: slug },
+          { targetId: { $regex: `^${slug}:` } },
+        ],
+      });
+
+      return NextResponse.json({ ok: true, slug });
+    }
+
     if (body.action === "approve_all_verify_requests") {
       ensureSuperAdmin(request);
       const db = await getMongoDbOrThrow();

@@ -9,6 +9,7 @@ export default function UserPage() {
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
   const [busySlug, setBusySlug] = useState("");
+  const [deleteBusySlug, setDeleteBusySlug] = useState("");
   const [theme, setTheme] = useState("dark");
   const [logoutBusy, setLogoutBusy] = useState(false);
 
@@ -105,6 +106,34 @@ export default function UserPage() {
       setMessage("Logout failed");
     } finally {
       setLogoutBusy(false);
+    }
+  }
+
+  async function deleteMahber(slug, name) {
+    if (!slug) return;
+    const confirmed = window.confirm(`Delete \"${name || "this mahber"}\"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeleteBusySlug(slug);
+    setMessage("");
+    try {
+      const res = await fetch("/api/mahbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_owned", slug }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.error || "Failed to delete mahber");
+        return;
+      }
+
+      setOwnedMahbers((prev) => prev.filter((m) => m.slug !== slug));
+      setMessage("Mahber deleted");
+    } catch {
+      setMessage("Failed to delete mahber");
+    } finally {
+      setDeleteBusySlug("");
     }
   }
 
@@ -229,21 +258,40 @@ export default function UserPage() {
                       {m.verified ? "Verified" : m.verifyRequested ? "Verification pending" : "Not verified"}
                     </div>
                   </div>
-                  <button
-                    disabled={Boolean(busySlug) || m.verified || m.verifyRequested}
-                    onClick={() => requestVerification(m.slug)}
-                    style={{
-                      border: "1px solid #2384d6",
-                      background: m.verified || m.verifyRequested ? "#10233b" : "#1c7dd1",
-                      color: "#fff",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontWeight: 800,
-                      cursor: m.verified || m.verifyRequested ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {m.verified ? "Verified" : m.verifyRequested ? "Pending" : busySlug === m.slug ? "Applying..." : "Apply"}
-                  </button>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <button
+                      disabled={Boolean(busySlug) || Boolean(deleteBusySlug) || m.verified || m.verifyRequested}
+                      onClick={() => requestVerification(m.slug)}
+                      style={{
+                        border: "1px solid #2384d6",
+                        background: m.verified || m.verifyRequested ? "#10233b" : "#1c7dd1",
+                        color: "#fff",
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        fontWeight: 800,
+                        cursor: m.verified || m.verifyRequested ? "not-allowed" : "pointer",
+                        opacity: deleteBusySlug ? 0.7 : 1,
+                      }}
+                    >
+                      {m.verified ? "Verified" : m.verifyRequested ? "Pending" : busySlug === m.slug ? "Applying..." : "Apply"}
+                    </button>
+                    <button
+                      disabled={Boolean(busySlug) || Boolean(deleteBusySlug)}
+                      onClick={() => deleteMahber(m.slug, m.name)}
+                      style={{
+                        border: "1px solid #9b304a",
+                        background: "#7a1f35",
+                        color: "#fff",
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        fontWeight: 800,
+                        cursor: Boolean(busySlug) || Boolean(deleteBusySlug) ? "not-allowed" : "pointer",
+                        opacity: Boolean(busySlug) ? 0.7 : 1,
+                      }}
+                    >
+                      {deleteBusySlug === m.slug ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </div>
               ))
             )}

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+const ADMIN_GROUPS_PAGE_SIZE = 50;
+
 export default function AdminClient() {
   const [status, setStatus] = useState({ loading: true, mongoConnected: false, user: null, superAdminUsername: "mikilezen" });
   const [initialLoading, setInitialLoading] = useState(true);
@@ -14,6 +16,11 @@ export default function AdminClient() {
   const [postText, setPostText] = useState("");
 
   const [groups, setGroups] = useState([]);
+  const [groupsTotal, setGroupsTotal] = useState(0);
+  const [groupsCursor, setGroupsCursor] = useState("0");
+  const [groupsHasMore, setGroupsHasMore] = useState(false);
+  const [groupsCursorHistory, setGroupsCursorHistory] = useState([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
   const [emojiInput, setEmojiInput] = useState("");
   const [emojiList, setEmojiList] = useState([]);
 
@@ -62,6 +69,54 @@ export default function AdminClient() {
     return groups.filter((g) => String(g.name || "").toLowerCase().includes(q));
   }, [groups, query]);
 
+  const pageStart = Number.parseInt(groupsCursor || "0", 10) || 0;
+  const pageEnd = pageStart + groups.length;
+
+  async function fetchGroupsPage(nextCursor, options = {}) {
+    const { pushHistory = false } = options;
+    const normalizedCursor = String(nextCursor ?? "0");
+
+    setGroupsLoading(true);
+    try {
+      const res = await fetch(
+        `/api/mahbers?cursor=${encodeURIComponent(normalizedCursor)}&limit=${ADMIN_GROUPS_PAGE_SIZE}`,
+        { cache: "no-store" }
+      );
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setMessage(data?.error || "Failed to load mahber page");
+        return;
+      }
+
+      if (pushHistory) {
+        setGroupsCursorHistory((prev) => [...prev, groupsCursor]);
+      }
+
+      setGroups(Array.isArray(data.items) ? data.items : []);
+      setGroupsTotal(Number(data.total || 0));
+      setGroupsCursor(normalizedCursor);
+      setGroupsHasMore(Boolean(data.hasMore));
+    } catch {
+      setMessage("Failed to load mahber page");
+    } finally {
+      setGroupsLoading(false);
+    }
+  }
+
+  async function handleNextGroupsPage() {
+    if (groupsLoading || !groupsHasMore) return;
+    const nextCursor = String(pageEnd);
+    await fetchGroupsPage(nextCursor, { pushHistory: true });
+  }
+
+  async function handlePrevGroupsPage() {
+    if (groupsLoading || groupsCursorHistory.length === 0) return;
+    const previousCursor = groupsCursorHistory[groupsCursorHistory.length - 1];
+    setGroupsCursorHistory((prev) => prev.slice(0, -1));
+    await fetchGroupsPage(previousCursor, { pushHistory: false });
+  }
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -71,7 +126,7 @@ export default function AdminClient() {
 
       const [statusRes, groupsRes, emojisRes] = await Promise.all([
         fetch("/api/admin/status", { cache: "no-store", signal: controller.signal }),
-        fetch("/api/mahbers?cursor=0&limit=100", { cache: "no-store", signal: controller.signal }),
+        fetch(`/api/mahbers?cursor=0&limit=${ADMIN_GROUPS_PAGE_SIZE}`, { cache: "no-store", signal: controller.signal }),
         fetch("/api/emojis", { cache: "no-store", signal: controller.signal }),
       ]);
 
@@ -93,6 +148,10 @@ export default function AdminClient() {
       });
 
       setGroups(Array.isArray(groupsData.items) ? groupsData.items : []);
+      setGroupsTotal(Number(groupsData.total || 0));
+      setGroupsCursor("0");
+      setGroupsCursorHistory([]);
+      setGroupsHasMore(Boolean(groupsData.hasMore));
       setEmojiList(Array.isArray(emojisData.items) ? emojisData.items.map((x) => x.emoji) : []);
     }
 
@@ -283,7 +342,30 @@ export default function AdminClient() {
         </div>
       </div>
 
+      <div style={pagerWrapStyle}>
+        <div style={{ color: "#9aa5bf", fontSize: 12 }}>
+          Mahbers page: {groupsTotal === 0 ? "0" : pageStart + 1}-{pageEnd} of {groupsTotal}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={handlePrevGroupsPage}
+            disabled={groupsLoading || groupsCursorHistory.length === 0}
+            style={{ ...chipGoodBtnStyle, opacity: groupsLoading || groupsCursorHistory.length === 0 ? 0.5 : 1, cursor: groupsLoading || groupsCursorHistory.length === 0 ? "not-allowed" : "pointer" }}
+          >
+            Prev
+          </button>
+          <button
+            onClick={handleNextGroupsPage}
+            disabled={groupsLoading || !groupsHasMore}
+            style={{ ...chipGoodBtnStyle, opacity: groupsLoading || !groupsHasMore ? 0.5 : 1, cursor: groupsLoading || !groupsHasMore ? "not-allowed" : "pointer" }}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
         {initialLoading ? <p style={{ color: "#9aa5bf", marginBottom: 14 }}>Loading admin data...</p> : null}
+        {groupsLoading ? <p style={{ color: "#9aa5bf", marginBottom: 14 }}>Loading mahber page...</p> : null}
         {loadError ? <p style={{ color: "#ffb3c1", marginBottom: 14 }}>{loadError}</p> : null}
 
       <div style={{ display: "grid", gap: 16, maxWidth: 980 }}>
@@ -315,6 +397,9 @@ export default function AdminClient() {
           <input style={inputStyle} value={postText} onChange={(e) => setPostText(e.target.value)} />
 
           <button onClick={handleCreateWar} style={primaryBtnStyle}>Create War Round</button>
+          <div style={{ marginTop: 8, color: "#9aa5bf", fontSize: 12 }}>
+            Dropdowns use the current page. Use Prev/Next above to load more mahbers.
+          </div>
         </section>
 
         <section style={panelStyle}>
@@ -423,6 +508,19 @@ const statusBoxStyle = {
   marginBottom: 16,
   background: "#0e1626",
   maxWidth: 980,
+};
+
+const pagerWrapStyle = {
+  border: "1px solid #23344f",
+  borderRadius: 12,
+  padding: "10px 12px",
+  marginBottom: 12,
+  background: "#0e1626",
+  maxWidth: 980,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
 };
 
 const panelStyle = {
