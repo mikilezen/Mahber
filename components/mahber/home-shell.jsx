@@ -362,7 +362,7 @@ export default function HomeShell() {
 
   useEffect(() => {
     function onScroll() {
-      if (tab !== "feed") return;
+      if (tab !== "feed" && tab !== "following") return;
       if (initialLoading || loadingMore || !hasMore || !nextCursor) return;
 
       const documentHeight = document.documentElement.scrollHeight;
