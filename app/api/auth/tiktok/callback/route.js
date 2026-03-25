@@ -14,8 +14,13 @@ export async function GET(request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
+  const upstreamError = url.searchParams.get("error") || url.searchParams.get("error_type");
   const storedState = request.cookies.get("tiktok_oauth_state")?.value;
   const storedVerifier = request.cookies.get("tiktok_oauth_verifier")?.value;
+
+  if (upstreamError) {
+    return NextResponse.redirect(new URL(`/?auth=tiktok_upstream_error`, request.url));
+  }
 
   if (!code || !state || !storedState || state !== storedState) {
     return NextResponse.redirect(new URL("/?auth=tiktok_state_mismatch", request.url));
@@ -27,7 +32,7 @@ export async function GET(request) {
 
   try {
     const tokenPayload = await exchangeCodeForToken(code, storedVerifier);
-    const accessToken = tokenPayload.access_token;
+    const accessToken = tokenPayload?.access_token || tokenPayload?.data?.access_token;
 
     if (!accessToken) {
       return NextResponse.redirect(new URL("/?auth=tiktok_token_missing", request.url));
@@ -58,7 +63,8 @@ export async function GET(request) {
     response.cookies.delete("tiktok_oauth_state");
     response.cookies.delete("tiktok_oauth_verifier");
     return response;
-  } catch {
+  } catch (error) {
+    console.error("TikTok callback failed", error);
     return NextResponse.redirect(new URL("/?auth=tiktok_failed", request.url));
   }
 }
