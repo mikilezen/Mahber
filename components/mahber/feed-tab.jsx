@@ -1,5 +1,6 @@
 import { ET_GREEN, ET_RED, ET_YELLOW } from "./constants";
 import { fmt, fmtHeat, getMahberRouteKey, getTier } from "./utils";
+import { useState } from "react";
 
 function normalizeExternalUrl(value) {
   const raw = String(value || "").trim();
@@ -43,6 +44,23 @@ export default function FeedTab({
   onShare,
   toast,
 }) {
+  const [joinPulseId, setJoinPulseId] = useState(null);
+  const [sharePulseId, setSharePulseId] = useState(null);
+
+  async function handleJoinClick(m, e) {
+    e.stopPropagation();
+    setJoinPulseId(m.id);
+    setTimeout(() => setJoinPulseId((prev) => (prev === m.id ? null : prev)), 320);
+    await onJoin(m.id, e);
+  }
+
+  function handleShareClick(m, e) {
+    e.stopPropagation();
+    setSharePulseId(m.id);
+    setTimeout(() => setSharePulseId((prev) => (prev === m.id ? null : prev)), 320);
+    onShare(m);
+  }
+
   return (
     <>
       <div className="feed-header">
@@ -160,20 +178,14 @@ export default function FeedTab({
 
                 <div className="card-btns">
                   <button
-                    className={`btn btn-join ${m.joined ? "on" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onJoin(m.id, e);
-                    }}
+                    className={`btn btn-join ${m.joined ? "on" : ""} ${joinPulseId === m.id ? "click-pop" : ""}`}
+                    onClick={(e) => handleJoinClick(m, e)}
                   >
                     {m.joined ? "✓ Joined" : "+ Join"}
                   </button>
                   <button
-                    className="btn btn-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onShare(m);
-                    }}
+                    className={`btn btn-icon ${sharePulseId === m.id ? "click-pop" : ""}`}
+                    onClick={(e) => handleShareClick(m, e)}
                   >
                     📤
                   </button>
