@@ -15,13 +15,18 @@ export async function GET(request) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const storedState = request.cookies.get("tiktok_oauth_state")?.value;
+  const storedVerifier = request.cookies.get("tiktok_oauth_verifier")?.value;
 
   if (!code || !state || !storedState || state !== storedState) {
     return NextResponse.redirect(new URL("/?auth=tiktok_state_mismatch", request.url));
   }
 
+  if (!storedVerifier) {
+    return NextResponse.redirect(new URL("/?auth=tiktok_pkce_missing", request.url));
+  }
+
   try {
-    const tokenPayload = await exchangeCodeForToken(code);
+    const tokenPayload = await exchangeCodeForToken(code, storedVerifier);
     const accessToken = tokenPayload.access_token;
 
     if (!accessToken) {
@@ -51,6 +56,7 @@ export async function GET(request) {
       maxAge: 60 * 60 * 24 * 7,
     });
     response.cookies.delete("tiktok_oauth_state");
+    response.cookies.delete("tiktok_oauth_verifier");
     return response;
   } catch {
     return NextResponse.redirect(new URL("/?auth=tiktok_failed", request.url));

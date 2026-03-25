@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildAuthUrl, hasTikTokConfig } from "@/lib/auth/tiktok";
+import { buildAuthUrl, generatePkcePair, hasTikTokConfig } from "@/lib/auth/tiktok";
 
 export async function GET(request) {
   if (!hasTikTokConfig()) {
@@ -7,8 +7,16 @@ export async function GET(request) {
   }
 
   const state = crypto.randomUUID();
-  const response = NextResponse.redirect(buildAuthUrl(state));
+  const { codeVerifier, codeChallenge } = generatePkcePair();
+  const response = NextResponse.redirect(buildAuthUrl(state, codeChallenge));
   response.cookies.set("tiktok_oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 10,
+  });
+  response.cookies.set("tiktok_oauth_verifier", codeVerifier, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
