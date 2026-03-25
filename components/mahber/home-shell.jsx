@@ -89,6 +89,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--yellow);color:#000;font-weight:800;font-size:14px;padding:12px 26px;border-radius:30px;z-index:999;box-shadow:0 8px 32px rgba(252,221,9,0.35)}
 .feed-header{padding:20px 18px 0;position:relative;z-index:1}
 .feed-title{font-family:'Black Han Sans',sans-serif;font-size:clamp(30px,7vw,56px);letter-spacing:3px;line-height:.95;background:linear-gradient(135deg,#fff 0%,var(--yellow) 60%,var(--fire) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+:root[data-theme='light'] .feed-title{background:linear-gradient(135deg,#0f1b33 0%,#1f3f75 55%,#cc3b00 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .feed-sub{font-size:13px;color:var(--muted);font-weight:500;margin-bottom:16px}
 .search-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .search{flex:1;min-width:140px;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--txt);outline:none}
