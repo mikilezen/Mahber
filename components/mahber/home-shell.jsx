@@ -487,6 +487,8 @@ export default function HomeShell() {
       if (!result.ok) {
         if (result.error === "no_connection") {
           toast("No internet connection");
+        } else if (result.status === 409 || result.data?.error === "slug_exists") {
+          toast("That mahber name is already used. Try a different name.");
         } else {
           toast(result.data?.error || "Create failed");
         }

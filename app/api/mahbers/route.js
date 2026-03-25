@@ -17,6 +17,19 @@ function slugify(input) {
     .replace(/^-+|-+$/g, "");
 }
 
+async function makeUniqueSlug(db, rawName) {
+  const base = slugify(rawName || "mahber") || "mahber";
+  for (let i = 0; i < 200; i += 1) {
+    const candidate = i === 0 ? base : `${base}-${i + 1}`;
+    const exists = await db.collection("mahbers").findOne(
+      { slug: candidate },
+      { projection: { _id: 1 } }
+    );
+    if (!exists) return candidate;
+  }
+  return `${base}-${Date.now()}`;
+}
+
 function makeCreatorUsername(groupName) {
   const base = slugify(groupName).replace(/-/g, "").slice(0, 10) || "mahber";
   const suffix = Math.floor(100 + Math.random() * 900);
@@ -179,7 +192,7 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, error: "invalid_payload" }, { status: 400 });
     }
 
-    const slug = slugify(rawName || "mahber");
+    const slug = await makeUniqueSlug(db, rawName);
     const creator = await makeUniqueCreatorUsername(db, body.name);
     const tiktok = String(body.tiktok || "").trim();
     const telegram = String(body.telegram || "").trim();
@@ -205,11 +218,6 @@ export async function POST(request) {
       boostPoints: 0,
       updatedAt: new Date().toISOString(),
     };
-
-    const exists = await db.collection("mahbers").findOne({ slug: record.slug });
-    if (exists) {
-      return NextResponse.json({ ok: false, error: "slug_exists" }, { status: 409 });
-    }
 
     await db.collection("mahbers").insertOne(record);
     return NextResponse.json({ ok: true, item: record });
