@@ -13,7 +13,7 @@ export default function LoginPage() {
 
 function LoginPageContent() {
   const params = useSearchParams();
-  const [providers, setProviders] = useState({ tiktok: true, google: false });
+  const [providers, setProviders] = useState({ tiktok: false, google: false });
   const msg = useMemo(() => {
     const auth = params.get("auth");
     if (auth === "google_not_configured") return "Google login is not configured yet.";
@@ -41,38 +41,33 @@ function LoginPageContent() {
     <main style={{ minHeight: "100vh", background: "#07070A", color: "#eaf0ff", padding: 24 }}>
       <div style={{ maxWidth: 520, margin: "0 auto", display: "grid", gap: 16 }}>
         <h1 style={{ marginBottom: 6 }}>Login</h1>
-        <p style={{ color: "#9aa5bf" }}>Continue with TikTok or Google.</p>
+        <p style={{ color: "#9aa5bf" }}>Continue with TikTok.</p>
 
         <section style={boxStyle}>
-          <a
-            href="/api/auth/tiktok/login"
-            style={{
-              ...btnStyle,
-              textDecoration: "none",
-              textAlign: "center",
-              background: "#FE2C55",
-              borderColor: "#FE2C55",
-              opacity: providers.tiktok ? 1 : 0.5,
-              pointerEvents: providers.tiktok ? "auto" : "none",
-            }}
-          >
-            Continue with TikTok
-          </a>
-          {providers.google ? (
-            <a href="/api/auth/google/login" style={{ ...btnStyle, textDecoration: "none", textAlign: "center", background: "#4285F4", borderColor: "#4285F4" }}>
-              Continue with Google
+          {providers.tiktok ? (
+            <a
+              href="/api/auth/tiktok/login"
+              style={{
+                ...btnStyle,
+                textDecoration: "none",
+                textAlign: "center",
+                background: "#FE2C55",
+                borderColor: "#FE2C55",
+              }}
+            >
+              Continue with TikTok
             </a>
           ) : (
             <div style={{ ...btnStyle, textAlign: "center", background: "#26354d", borderColor: "#2e4667", cursor: "not-allowed", opacity: 0.75 }}>
-              Google not configured
+              TikTok login not configured
             </div>
           )}
         </section>
 
         {msg ? <div style={{ color: "#ffd166", fontSize: 13 }}>{msg}</div> : null}
-        {!providers.google ? (
+        {!providers.tiktok ? (
           <div style={{ color: "#9aa5bf", fontSize: 12 }}>
-            Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI` in `.env.local` to enable Google login.
+            Add `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, and `TIKTOK_REDIRECT_URI` in production environment to enable TikTok login.
           </div>
         ) : null}
       </div>
