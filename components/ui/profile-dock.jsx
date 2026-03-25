@@ -38,34 +38,7 @@ export default function ProfileDock({ profile, onCreate, onProfile, onLogin }) {
     );
   }
 
-  return (
-    <div
-      style={{
-        position: "fixed",
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 999,
-        padding: "10px 14px",
-        background: "color-mix(in srgb, var(--s2) 88%, transparent)",
-        borderTop: "1px solid var(--border)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
-        <button onClick={onProfile} style={circleBtnStyle("var(--s3)", "var(--txt)")} aria-label="Profile" title="Profile">
-          <img
-            src={profile?.picture || "https://placehold.co/64x64?text=U"}
-            alt="Profile"
-            width={26}
-            height={26}
-            style={{ borderRadius: "50%", objectFit: "cover" }}
-          />
-        </button>
-        <button onClick={onCreate} style={circleBtnStyle("var(--yellow)", "#000")} aria-label="Create" title="Create">+</button>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 function circleBtnStyle(bg, color) {

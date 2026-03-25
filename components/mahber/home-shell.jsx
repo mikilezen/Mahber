@@ -549,7 +549,6 @@ export default function HomeShell() {
             ["following", "👥 Following"],
             ["wars", "⚔️ Wars"],
             ["trending", "📈 Trending"],
-            ...(profile ? [["create", "➕ Create"]] : []),
           ].map(([id, label]) => (
             <button key={id} className={`tab ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}>
               {label}
@@ -655,7 +654,6 @@ export default function HomeShell() {
           theme={theme}
           profile={profile}
           onThemeToggle={toggleTheme}
-          onCreate={() => setTab("create")}
           onLogin={() => {
             window.location.href = "/login";
           }}
