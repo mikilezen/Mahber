@@ -265,17 +265,6 @@ export default function MahberProfilePage() {
     return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s left`;
   }
 
-  async function refreshMahber() {
-    if (!slug) return;
-    const res = await fetch(`/api/mahbers?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
-    if (!res.ok) return;
-    const data = await res.json();
-    setItem(data.item || null);
-    if (typeof window !== "undefined" && data.item) {
-      localStorage.setItem(pageCacheKey, JSON.stringify(data.item));
-    }
-  }
-
   async function handleCreatePoll() {
     if (!item?.slug) return;
     setPollError("");

@@ -32,7 +32,7 @@ export default function ProfileDock({ profile, onCreate, onProfile, onLogin }) {
             boxShadow: "0 10px 28px rgba(254,44,85,0.36)",
           }}
         >
-          T
+          Logi in with Tiktok
         </button>
       </div>
     );
