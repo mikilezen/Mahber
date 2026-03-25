@@ -407,7 +407,7 @@ export default function HomeShell() {
               joinCount: Number(nextItem.joinCount ?? m.joinCount),
             }))
       );
-      toast(joinedNow ? `Joined ${target.name}` : `Left ${target.name}`);
+      toast(data?.alreadyJoined ? `Already joined ${target.name}` : joinedNow ? `Joined ${target.name}` : `Join saved`);
     } catch {
       toast("Join failed");
     }
@@ -527,6 +527,8 @@ export default function HomeShell() {
       .sort((a, b) => b.heat - a.heat);
   }, [mahbers, search, filterTag]);
 
+  const following = useMemo(() => filtered.filter((m) => m.joined), [filtered]);
+
   const warCountdown = Math.max(0, Math.floor((Number(war?.endsAt || 0) - Date.now()) / 1000));
 
   return (
@@ -544,6 +546,7 @@ export default function HomeShell() {
         <div className="tabs">
           {[
             ["feed", "🔥 Feed"],
+            ["following", "👥 Following"],
             ["wars", "⚔️ Wars"],
             ["trending", "📈 Trending"],
             ...(profile ? [["create", "➕ Create"]] : []),
@@ -594,6 +597,32 @@ export default function HomeShell() {
             <div style={{ padding: "0 18px 108px", color: "var(--muted)", fontSize: 13, textAlign: "center" }}>
               {loadingMore ? "Loading more mahbers..." : hasMore ? "Scroll down to load more" : "All mahbers loaded"}
             </div>
+          </>
+        )}
+
+        {tab === "following" && (
+          <>
+            <FeedTab
+              filtered={following}
+              search={search}
+              setSearch={setSearch}
+              filterTag={filterTag}
+              setFilterTag={setFilterTag}
+              allTags={allTags}
+              tagColors={tagColors}
+              onJoin={handleJoin}
+              onShare={(m) => {
+                const key = m?.slug;
+                const link = key ? `${window.location.origin}/mahber/${key}` : window.location.origin;
+                navigator.clipboard.writeText(link).then(() => toast("Link copied")).catch(() => toast(link));
+              }}
+              toast={toast}
+            />
+            {following.length === 0 ? (
+              <div style={{ padding: "0 18px 108px", color: "var(--muted)", fontSize: 13, textAlign: "center" }}>
+                You have not joined any mahber yet.
+              </div>
+            ) : null}
           </>
         )}
 

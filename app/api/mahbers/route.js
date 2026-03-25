@@ -30,28 +30,6 @@ async function makeUniqueSlug(db, rawName) {
   return `${base}-${Date.now()}`;
 }
 
-function makeCreatorUsername(groupName) {
-  const base = slugify(groupName).replace(/-/g, "").slice(0, 10) || "mahber";
-  const suffix = Math.floor(100 + Math.random() * 900);
-  return `${base}_${suffix}`;
-}
-
-async function makeUniqueCreatorUsername(db, groupName) {
-  for (let i = 0; i < 100; i += 1) {
-    const candidate = makeCreatorUsername(groupName);
-    const [userExists, creatorExists] = await Promise.all([
-      db.collection("users").findOne({ username: candidate }),
-      db.collection("mahbers").findOne({ creator: candidate }),
-    ]);
-    if (!userExists && !creatorExists) {
-      return candidate;
-    }
-  }
-
-  const fallback = `${slugify(groupName).replace(/-/g, "").slice(0, 10) || "mahber"}_${Date.now()}`;
-  return fallback;
-}
-
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -193,7 +171,7 @@ export async function POST(request) {
     }
 
     const slug = await makeUniqueSlug(db, rawName);
-    const creator = await makeUniqueCreatorUsername(db, body.name);
+    const creator = user.username;
     const tiktok = String(body.tiktok || "").trim();
     const telegram = String(body.telegram || "").trim();
     if (tiktok.length > MAX_LINK_LEN || telegram.length > MAX_LINK_LEN) {
@@ -214,13 +192,30 @@ export async function POST(request) {
       telegram: telegram || "",
       creator,
       ownerUsername: user.username,
-      joinCount: 0,
+      joinCount: 1,
       boostPoints: 0,
       updatedAt: new Date().toISOString(),
     };
 
     await db.collection("mahbers").insertOne(record);
-    return NextResponse.json({ ok: true, item: record });
+    await db.collection("votes").updateOne(
+      {
+        type: "mahber_join",
+        targetId: slug,
+        username: user.username,
+      },
+      {
+        $setOnInsert: {
+          type: "mahber_join",
+          targetId: slug,
+          username: user.username,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true }
+    );
+
+    return NextResponse.json({ ok: true, item: { ...record, joined: true } });
   } catch (error) {
     if (error?.code === "LOGIN_REQUIRED") {
       return NextResponse.json({ ok: false, error: "login_required" }, { status: 401 });
@@ -373,24 +368,15 @@ export async function PATCH(request) {
       const existing = await db.collection("votes").findOne(interactionFilter);
 
       if (kind === "join") {
-        const isUndo = Boolean(existing);
-        const inc = {
-          members: isUndo && Number(target.members || 0) <= 0 ? 0 : isUndo ? -1 : 1,
-          heat: isUndo ? -80 : 80,
-          joinCount: isUndo && Number(target.joinCount || 0) <= 0 ? 0 : isUndo ? -1 : 1,
-        };
+        if (!existing) {
+          await db.collection("mahbers").updateOne(
+            { slug },
+            {
+              $inc: { members: 1, heat: 80, joinCount: 1 },
+              $set: { updatedAt: new Date().toISOString() },
+            }
+          );
 
-        await db.collection("mahbers").updateOne(
-          { slug },
-          {
-            $inc: inc,
-            $set: { updatedAt: new Date().toISOString() },
-          }
-        );
-
-        if (isUndo) {
-          await db.collection("votes").deleteOne({ _id: existing._id });
-        } else {
           await db.collection("votes").insertOne({
             ...interactionFilter,
             createdAt: new Date().toISOString(),
@@ -401,7 +387,7 @@ export async function PATCH(request) {
         if (!result) {
           return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
         }
-        return NextResponse.json({ ok: true, item: result, active: !isUndo, kind });
+        return NextResponse.json({ ok: true, item: result, active: true, kind, alreadyJoined: Boolean(existing) });
       }
 
       const now = Date.now();
