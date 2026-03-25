@@ -432,6 +432,36 @@ export async function PATCH(request) {
       return NextResponse.json({ ok: true, item: result, active: true, kind, retryAt: now + DAY_MS });
     }
 
+    if (body.action === "track_metric") {
+      const slug = typeof body.slug === "string" ? body.slug.trim() : "";
+      const kind = String(body.kind || "").trim().toLowerCase();
+
+      if (!slug || !["share", "view"].includes(kind)) {
+        return NextResponse.json({ ok: false, error: "invalid_track_payload" }, { status: 400 });
+      }
+
+      const db = await getMongoDbOrThrow();
+      const increment =
+        kind === "share"
+          ? { shareCount: 1, copyCount: 1, heat: 25 }
+          : { viewCount: 1, views: 1, heat: 3 };
+
+      await db.collection("mahbers").updateOne(
+        { slug },
+        {
+          $inc: increment,
+          $set: { updatedAt: new Date().toISOString() },
+        }
+      );
+
+      const item = await db.collection("mahbers").findOne({ slug });
+      if (!item) {
+        return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ ok: true, item, kind });
+    }
+
     if (body.action === "request_verify") {
       const user = ensureSessionUser(request);
       const slug = typeof body.slug === "string" ? body.slug : null;
@@ -550,6 +580,41 @@ export async function PATCH(request) {
         {
           $set: {
             category,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+        { returnDocument: "after" }
+      );
+
+      if (!result) {
+        return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ ok: true, item: result });
+    }
+
+    if (body.action === "update_heat") {
+      ensureSuperAdmin(request);
+
+      const id = Number(body.id);
+      const slug = typeof body.slug === "string" ? body.slug.trim() : "";
+      const nextHeat = Number(body.heat);
+
+      if (!id && !slug) {
+        return NextResponse.json({ ok: false, error: "id_or_slug_required" }, { status: 400 });
+      }
+
+      if (!Number.isFinite(nextHeat) || nextHeat < 0 || nextHeat > 1000000000) {
+        return NextResponse.json({ ok: false, error: "invalid_heat" }, { status: 400 });
+      }
+
+      const db = await getMongoDbOrThrow();
+      const filter = id ? { id } : { slug };
+      const result = await db.collection("mahbers").findOneAndUpdate(
+        filter,
+        {
+          $set: {
+            heat: Math.round(nextHeat),
             updatedAt: new Date().toISOString(),
           },
         },

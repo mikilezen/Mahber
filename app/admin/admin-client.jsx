@@ -37,6 +37,7 @@ export default function AdminClient() {
   const [verifyFilter, setVerifyFilter] = useState("all");
   const [sortBy, setSortBy] = useState("heat_desc");
   const [tagDrafts, setTagDrafts] = useState({});
+  const [heatDrafts, setHeatDrafts] = useState({});
 
   const stats = useMemo(() => {
     const total = groups.length;
@@ -357,6 +358,39 @@ export default function AdminClient() {
     }
   }
 
+  async function handleUpdateHeat(item) {
+    const key = item.slug || String(item.id || "");
+    const raw = String(heatDrafts[key] ?? item.heat ?? "").trim();
+    const nextHeat = Number(raw);
+
+    if (!Number.isFinite(nextHeat) || nextHeat < 0) {
+      setMessage("Heat must be a valid non-negative number");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/mahbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_heat", id: item.id, slug: item.slug, heat: Math.round(nextHeat) }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.error || "Failed to update heat");
+        return;
+      }
+
+      setGroups((prev) =>
+        prev.map((g) => ((g.id === item.id || g.slug === item.slug) ? { ...g, heat: Math.round(nextHeat) } : g))
+      );
+      setHeatDrafts((prev) => ({ ...prev, [key]: String(Math.round(nextHeat)) }));
+      setMessage(`Updated heat to ${Math.round(nextHeat)}`);
+    } catch {
+      setMessage("Failed to update heat");
+    }
+  }
+
   return (
     <main style={{ padding: 24, color: "#eaf0ff", background: "#07070A", minHeight: "100vh" }}>
       <h1 style={{ marginBottom: 10 }}>Admin Panel</h1>
@@ -525,6 +559,20 @@ export default function AdminClient() {
                         placeholder="tag (e.g. community)"
                       />
                       <button onClick={() => handleUpdateTag(item)} style={chipGoodBtnStyle}>Save Tag</button>
+                      <input
+                        type="number"
+                        min={0}
+                        style={{ ...inputStyle, maxWidth: 140, padding: "7px 10px", fontSize: 12 }}
+                        value={heatDrafts[item.slug || String(item.id || "")] ?? String(item.heat ?? 0)}
+                        onChange={(e) =>
+                          setHeatDrafts((prev) => ({
+                            ...prev,
+                            [item.slug || String(item.id || "")]: e.target.value,
+                          }))
+                        }
+                        placeholder="heat"
+                      />
+                      <button onClick={() => handleUpdateHeat(item)} style={chipGoodBtnStyle}>Save Heat</button>
                     </div>
                   </div>
                   <div style={{ display: "grid", gap: 8 }}>

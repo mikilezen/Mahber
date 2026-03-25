@@ -190,6 +190,38 @@ export default function MahberProfilePage() {
   }, []);
 
   useEffect(() => {
+    if (!slug) return;
+
+    let mounted = true;
+
+    async function trackView() {
+      try {
+        const res = await fetch("/api/mahbers", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "track_metric", slug, kind: "view" }),
+        });
+        if (!res.ok || !mounted) return;
+        const data = await res.json().catch(() => ({}));
+        if (data?.item && mounted) {
+          setItem(data.item);
+          if (typeof window !== "undefined") {
+            localStorage.setItem(pageCacheKey, JSON.stringify(data.item));
+          }
+        }
+      } catch {
+        // best effort metric tracking
+      }
+    }
+
+    trackView();
+
+    return () => {
+      mounted = false;
+    };
+  }, [slug, pageCacheKey]);
+
+  useEffect(() => {
     if (!slug || !profile?.username || typeof window === "undefined") return;
     const key = `mahber-actions:${slug}:${profile.username}`;
     try {
@@ -408,6 +440,8 @@ export default function MahberProfilePage() {
             <Stat label="Heat" value={`${fmt(item.heat)} 🔥`} />
             <Stat label="Joins" value={fmt(item.joinCount || 0)} />
             <Stat label="Boosts" value={fmt(item.boostPoints || 0)} />
+            <Stat label="Shares" value={fmt(item.shareCount || item.copyCount || 0)} />
+            <Stat label="Views" value={fmt(item.viewCount || item.views || 0)} />
             <Stat label="Category" value={item.category || "community"} />
           </div>
 
@@ -541,6 +575,18 @@ export default function MahberProfilePage() {
                 if (!shareLink) return;
                 try {
                   await navigator.clipboard.writeText(shareLink);
+                  const res = await fetch("/api/mahbers", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "track_metric", slug: item.slug, kind: "share" }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (res.ok && data?.item) {
+                    setItem(data.item);
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem(pageCacheKey, JSON.stringify(data.item));
+                    }
+                  }
                   alert("Link copied");
                 } catch {
                   alert(shareLink);

@@ -223,6 +223,7 @@ export default function HomeShell() {
   const [emojiOptions, setEmojiOptions] = useState(DEFAULT_EMOJI_OPTIONS);
   const [createForm, setCreateForm] = useState({ name: "", emoji: DEFAULT_EMOJI_OPTIONS[0], desc: "", tiktok: "", telegram: "" });
   const [createDone, setCreateDone] = useState(false);
+  const [recentCreatedSlug, setRecentCreatedSlug] = useState("");
   const [war, setWar] = useState(null);
   const [warJustVoted, setWarJustVoted] = useState(null);
 
@@ -549,7 +550,9 @@ export default function HomeShell() {
 
       const data = result.data || {};
       if (data?.item) {
-        setMahbers((prev) => [mapItem(data.item), ...prev]);
+        const createdItem = mapItem(data.item);
+        setMahbers((prev) => [createdItem, ...prev]);
+        setRecentCreatedSlug(String(createdItem.slug || ""));
       }
       setCreateDone(true);
       setTab("feed");
@@ -558,6 +561,26 @@ export default function HomeShell() {
     } catch {
       toast("Create failed");
     }
+  }
+
+  async function handleShare(m) {
+    const key = m?.slug;
+    const link = key ? `${window.location.origin}/mahber/${key}` : window.location.origin;
+
+    navigator.clipboard.writeText(link).then(() => toast("Link copied")).catch(() => toast(link));
+
+    if (!key) return;
+
+    const result = await requestJson("/api/mahbers", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "track_metric", slug: key, kind: "share" }),
+    });
+
+    if (!result.ok || !result.data?.item) return;
+
+    const updated = mapItem(result.data.item);
+    setMahbers((prev) => prev.map((x) => (x.slug === key ? { ...x, ...updated } : x)));
   }
 
   const allTags = useMemo(() => {
@@ -575,11 +598,15 @@ export default function HomeShell() {
       .filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))
       .filter((m) => filterTag === "all" || (m.tags || []).includes(filterTag))
       .sort((a, b) => {
+        const aPinned = recentCreatedSlug && a.slug === recentCreatedSlug;
+        const bPinned = recentCreatedSlug && b.slug === recentCreatedSlug;
+        if (aPinned && !bPinned) return -1;
+        if (!aPinned && bPinned) return 1;
         const scoreDiff = computeRankScore(b) - computeRankScore(a);
         if (scoreDiff !== 0) return scoreDiff;
         return b.heat - a.heat;
       });
-  }, [mahbers, search, filterTag]);
+  }, [mahbers, search, filterTag, recentCreatedSlug]);
 
   const following = useMemo(() => filtered.filter((m) => m.joined), [filtered]);
 
@@ -667,11 +694,7 @@ export default function HomeShell() {
               allTags={allTags}
               tagColors={tagColors}
               onJoin={handleJoin}
-              onShare={(m) => {
-                const key = m?.slug;
-                const link = key ? `${window.location.origin}/mahber/${key}` : window.location.origin;
-                navigator.clipboard.writeText(link).then(() => toast("Link copied")).catch(() => toast(link));
-              }}
+              onShare={handleShare}
               toast={toast}
             />
 
@@ -692,11 +715,7 @@ export default function HomeShell() {
               allTags={allTags}
               tagColors={tagColors}
               onJoin={handleJoin}
-              onShare={(m) => {
-                const key = m?.slug;
-                const link = key ? `${window.location.origin}/mahber/${key}` : window.location.origin;
-                navigator.clipboard.writeText(link).then(() => toast("Link copied")).catch(() => toast(link));
-              }}
+              onShare={handleShare}
               toast={toast}
             />
             {following.length === 0 ? (
