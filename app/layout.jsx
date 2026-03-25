@@ -7,16 +7,17 @@ export const metadata = {
     template: "%s | Mahber Platform",
   },
   description:
-    "Mahber Platform is a production-ready Next.js foundation for discovering, ranking, and managing Ethiopian communities at million-scale.",
+    "Mahber ethiopian community mahber socail titok trend for discovering, ranking, and managing Ethiopian communities at million-scale.",
   keywords: [
     "mahber",
     "ethiopian communities",
-    "next.js platform",
-    "community platform",
-    "social infrastructure",
+    "Mahber social",
+    "tiktok mahber",
+    "social media",
+    "Mikiyas Zenebe",
   ],
   openGraph: {
-    title: "Mahber Platform",
+    title: "Mahber Social",
     description:
       "SEO-ready and performance-optimized community platform architecture for massive scale.",
     url: "https://www.mahber.social",
@@ -29,8 +30,16 @@ export const metadata = {
     title: "Mahber Platform",
     description: "Build and scale Ethiopian communities with production-grade Next.js architecture.",
   },
-  alternates: {
-    canonical: "/",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 
