@@ -1,4 +1,4 @@
-import { fmt, fmtHeat, getMahberRouteKey, getTier } from "./utils";
+import { computeRankScore, fmt, fmtHeat, getMahberRouteKey, getTier } from "./utils";
 
 function normalizeExternalUrl(value) {
   const raw = String(value || "").trim();
@@ -31,7 +31,7 @@ function getAvatarUrl(m) {
 }
 
 export default function TrendingTab({ mahbers, toast }) {
-  const sorted = [...mahbers].sort((a, b) => b.heat - a.heat);
+  const sorted = [...mahbers].sort((a, b) => computeRankScore(b) - computeRankScore(a));
   const maxHeat = sorted.reduce((mx, x) => Math.max(mx, x.heat || 0), 1);
 
   return (

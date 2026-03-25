@@ -7,7 +7,7 @@ import TrendingTab from "./trending-tab";
 import WarsTab from "./wars-tab";
 import CreateTab from "./create-tab";
 import { ET_GREEN, ET_RED, ET_YELLOW, FIRE, FONTS } from "./constants";
-import { slugify } from "./utils";
+import { computeRankScore, slugify } from "./utils";
 
 const PAGE_SIZE = 15;
 const REQUEST_TIMEOUT_MS = 12000;
@@ -183,6 +183,11 @@ function mapItem(item) {
     warWins: Number(item.warWins || 0),
     joinCount: Number(item.joinCount || 0),
     boostPoints: Number(item.boostPoints || 0),
+    copyCount: Number(item.copyCount || 0),
+    viewCount: Number(item.viewCount || item.views || 0),
+    shareCount: Number(item.shareCount || 0),
+    adminWeight: Number(item.adminWeight || 0),
+    updatedAt: item.updatedAt || "",
     polls: Array.isArray(item.polls) ? item.polls : [],
     lb: Array.isArray(item.lb) ? item.lb : [],
     verified: Boolean(item.verified),
@@ -529,7 +534,11 @@ export default function HomeShell() {
     return mahbers
       .filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))
       .filter((m) => filterTag === "all" || (m.tags || []).includes(filterTag))
-      .sort((a, b) => b.heat - a.heat);
+      .sort((a, b) => {
+        const scoreDiff = computeRankScore(b) - computeRankScore(a);
+        if (scoreDiff !== 0) return scoreDiff;
+        return b.heat - a.heat;
+      });
   }, [mahbers, search, filterTag]);
 
   const following = useMemo(() => filtered.filter((m) => m.joined), [filtered]);

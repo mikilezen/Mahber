@@ -27,3 +27,36 @@ export function slugify(v) {
 export function getMahberRouteKey(m) {
   return String(m?.slug || m?.id || "").trim();
 }
+
+function toNum(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// Multi-signal ranking score used by feed/trending.
+export function computeRankScore(item) {
+  const heat = toNum(item?.heat);
+  const joins = toNum(item?.joinCount);
+  const boosts = toNum(item?.boostPoints);
+  const views = toNum(item?.viewCount ?? item?.views);
+  const copies = toNum(item?.copyCount ?? item?.shareCount);
+  const warWins = toNum(item?.warWins);
+  const isVerified = Boolean(item?.verified);
+  const adminWeight = toNum(item?.adminWeight);
+
+  const updatedAt = item?.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+  const ageHours = updatedAt > 0 ? Math.max(0, (Date.now() - updatedAt) / (1000 * 60 * 60)) : 48;
+  const recencyBoost = Math.max(0, 260 - ageHours * 6);
+
+  return (
+    heat * 0.5 +
+    joins * 115 +
+    boosts * 210 +
+    views * 2 +
+    copies * 300 +
+    warWins * 35 +
+    (isVerified ? 420 : 0) +
+    adminWeight * 180 +
+    recencyBoost
+  );
+}
