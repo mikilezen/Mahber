@@ -96,7 +96,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-
 .tag-strip::-webkit-scrollbar{display:none}
 .tag-btn{flex-shrink:0;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border);color:var(--muted);cursor:pointer;background:transparent;font-family:'Plus Jakarta Sans',sans-serif}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:4px 18px 100px;position:relative;z-index:1}
-.card{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:0;cursor:pointer;transition:transform .22s;position:relative;overflow:hidden}
+.card{background:color-mix(in srgb,var(--s2) 74%, transparent);border:1px solid var(--border);border-radius:20px;padding:0;cursor:pointer;transition:transform .22s;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
 .card:hover{transform:translateY(-5px)}
 .card-stripe{height:3px;width:100%}
 .card-body{padding:18px}
@@ -105,7 +105,9 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-
 .tier-badge{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .heat-val{font-family:'Black Han Sans',sans-serif;font-size:13px;letter-spacing:1px}
 .card-name{font-family:'Black Han Sans',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:3px;line-height:1.1}
-.card-creator{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.3px;margin-bottom:14px}
+.card-owner-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.card-owner-avatar{width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--s1)}
+.card-owner-name{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.2px}
 .card-stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:14px;padding:10px 0}
 .cstat{text-align:center}.cstat-v{font-family:'Black Han Sans',sans-serif;font-size:18px;letter-spacing:.5px}.cstat-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:1px}
 .card-btns{display:flex;gap:8px;flex-wrap:wrap}
@@ -121,7 +123,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-
 .rank-num{font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--muted);width:28px;flex-shrink:0}
 .rank-num.top3{color:var(--yellow)}
 .rank-emoji{font-size:28px;flex-shrink:0}
-.rank-info{flex:1}.rank-name{font-weight:700;font-size:15px;margin-bottom:2px}.rank-heat-text{font-size:12px;color:var(--muted)}
+.rank-info{flex:1}.rank-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px}.rank-avatar{width:20px;height:20px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--s1)}.rank-name{font-weight:700;font-size:15px}.rank-heat-text{font-size:12px;color:var(--muted)}
 .heat-bar-bg{height:4px;background:var(--s1);border-radius:4px;margin-top:6px;overflow:hidden}.heat-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
 .rank-tier-badge{font-size:10px;font-weight:800;letter-spacing:1.5px;padding:3px 8px;border-radius:6px;flex-shrink:0}
 .wars-wrap{padding:20px 18px 100px;position:relative;z-index:1}

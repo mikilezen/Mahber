@@ -503,6 +503,42 @@ export async function PATCH(request) {
       return NextResponse.json({ ok: true, modifiedCount: result.modifiedCount || 0 });
     }
 
+    if (body.action === "update_tag") {
+      ensureSuperAdmin(request);
+
+      const id = Number(body.id);
+      const slug = typeof body.slug === "string" ? body.slug.trim() : "";
+      const rawCategory = String(body.category || "").trim();
+      const category = rawCategory.toLowerCase().slice(0, 40);
+
+      if (!id && !slug) {
+        return NextResponse.json({ ok: false, error: "id_or_slug_required" }, { status: 400 });
+      }
+
+      if (!category || !/^[a-z0-9_-]+$/.test(category)) {
+        return NextResponse.json({ ok: false, error: "invalid_category" }, { status: 400 });
+      }
+
+      const db = await getMongoDbOrThrow();
+      const filter = id ? { id } : { slug };
+      const result = await db.collection("mahbers").findOneAndUpdate(
+        filter,
+        {
+          $set: {
+            category,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+        { returnDocument: "after" }
+      );
+
+      if (!result) {
+        return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ ok: true, item: result });
+    }
+
     ensureSuperAdmin(request);
 
     const id = Number(body.id);

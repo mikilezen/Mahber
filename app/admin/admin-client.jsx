@@ -20,6 +20,7 @@ export default function AdminClient() {
   const [query, setQuery] = useState("");
   const [verifyFilter, setVerifyFilter] = useState("all");
   const [sortBy, setSortBy] = useState("heat_desc");
+  const [tagDrafts, setTagDrafts] = useState({});
 
   const stats = useMemo(() => {
     const total = groups.length;
@@ -233,6 +234,38 @@ export default function AdminClient() {
     }
   }
 
+  async function handleUpdateTag(item) {
+    const key = item.slug || String(item.id || "");
+    const nextTag = String(tagDrafts[key] ?? item.category ?? "").trim().toLowerCase();
+
+    if (!nextTag) {
+      setMessage("Tag is required");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/mahbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_tag", id: item.id, slug: item.slug, category: nextTag }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.error || "Failed to update tag");
+        return;
+      }
+
+      setGroups((prev) =>
+        prev.map((g) => ((g.id === item.id || g.slug === item.slug) ? { ...g, category: nextTag } : g))
+      );
+      setTagDrafts((prev) => ({ ...prev, [key]: nextTag }));
+      setMessage(`Updated tag to ${nextTag}`);
+    } catch {
+      setMessage("Failed to update tag");
+    }
+  }
+
   return (
     <main style={{ padding: 24, color: "#eaf0ff", background: "#07070A", minHeight: "100vh" }}>
       <h1 style={{ marginBottom: 10 }}>Admin Panel</h1>
@@ -351,10 +384,26 @@ export default function AdminClient() {
                       creator: @{item.creator || "guest"} • owner: @{item.ownerUsername || "-"}
                       {item.verifyRequested && !item.verified ? " • requested" : ""}
                     </div>
+                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <input
+                        style={{ ...inputStyle, maxWidth: 180, padding: "7px 10px", fontSize: 12 }}
+                        value={tagDrafts[item.slug || String(item.id || "")] ?? item.category ?? ""}
+                        onChange={(e) =>
+                          setTagDrafts((prev) => ({
+                            ...prev,
+                            [item.slug || String(item.id || "")]: e.target.value,
+                          }))
+                        }
+                        placeholder="tag (e.g. community)"
+                      />
+                      <button onClick={() => handleUpdateTag(item)} style={chipGoodBtnStyle}>Save Tag</button>
+                    </div>
                   </div>
-                  <button onClick={() => handleToggleVerified(item, !item.verified)} style={item.verified ? chipDangerBtnStyle : chipGoodBtnStyle}>
-                    {item.verified ? "Remove Badge" : "Add Badge"}
-                  </button>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <button onClick={() => handleToggleVerified(item, !item.verified)} style={item.verified ? chipDangerBtnStyle : chipGoodBtnStyle}>
+                      {item.verified ? "Remove Badge" : "Add Badge"}
+                    </button>
+                  </div>
                 </div>
               ))
             )}

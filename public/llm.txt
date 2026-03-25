@@ -1,0 +1,27 @@
+# Mahber LLM Usage Guidelines
+
+Site: https://www.mahber.social
+Contact: https://www.mahber.social/policy
+Last-Updated: 2026-03-25
+
+## Allowed
+- Index public Mahber pages for search and discovery.
+- Summarize public content with short excerpts.
+- Cite Mahber as source and include original URL when possible.
+
+## Not Allowed
+- Reproduce full Mahber pages as-is.
+- Impersonate Mahber users or admins.
+- Scrape aggressively in ways that degrade service.
+
+## Attribution
+When output includes Mahber-derived content, include:
+- Source name: Mahber
+- Link to original page
+- Clear note that text was summarized or transformed
+
+## Privacy
+Do not infer, expose, or generate sensitive personal data from user-generated content.
+
+## Rate Expectations
+Use polite crawling and caching behavior.

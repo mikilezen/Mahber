@@ -1,6 +1,36 @@
 import { ET_GREEN, ET_RED, ET_YELLOW } from "./constants";
 import { fmt, fmtHeat, getMahberRouteKey, getTier } from "./utils";
 
+function normalizeExternalUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  return `https://${raw}`;
+}
+
+function getTikTokUsername(value) {
+  const url = normalizeExternalUrl(value);
+  const match = url.match(/tiktok\.com\/@([^/?#]+)/i);
+  if (match?.[1]) return match[1].replace(/^@/, "");
+  return "unknown";
+}
+
+function getTikTokProfileUrl(value) {
+  const normalized = normalizeExternalUrl(value);
+  const username = getTikTokUsername(value);
+  if (normalized && /tiktok\.com/i.test(normalized)) {
+    if (/tiktok\.com\/@[^/?#]+/i.test(normalized)) return normalized;
+  }
+  return `https://www.tiktok.com/@${username}`;
+}
+
+function getAvatarUrl(m) {
+  const direct = String(m?.picture || m?.avatar || "").trim();
+  if (direct) return direct;
+  const key = encodeURIComponent(String(m?.creator || m?.name || "Mahber"));
+  return `https://ui-avatars.com/api/?name=${key}&background=111827&color=F0EDE6&size=64`;
+}
+
 export default function FeedTab({
   filtered,
   search,
@@ -48,6 +78,8 @@ export default function FeedTab({
       <div className="grid">
         {filtered.map((m) => {
           const tier = getTier(m.heat);
+          const tiktokUrl = getTikTokProfileUrl(m.tiktok);
+          const tiktokUsername = getTikTokUsername(m.tiktok);
           return (
             <article
               key={m.id}
@@ -94,7 +126,22 @@ export default function FeedTab({
                     </span>
                   ) : null}
                 </div>
-                <div className="card-creator">@{m.creator}</div>
+                <div className="card-owner-row">
+                  <a href={tiktokUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title="Open TikTok profile">
+                    <img src={getAvatarUrl(m)} alt={`@${tiktokUsername} profile`} className="card-owner-avatar" loading="lazy" />
+                  </a>
+                  <a
+                    href={tiktokUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="card-owner-name"
+                    style={{ textDecoration: "none" }}
+                    title="Open TikTok profile"
+                  >
+                    @{tiktokUsername}
+                  </a>
+                </div>
 
                 <div className="card-stats">
                   <div className="cstat">
