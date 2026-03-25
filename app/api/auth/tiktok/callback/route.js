@@ -39,14 +39,14 @@ export async function GET(request) {
     }
 
     const profileResponse = await fetchTikTokProfile(accessToken);
-    const user = profileResponse?.data?.user;
+    const user = profileResponse?.data?.user || profileResponse?.user || profileResponse?.data;
 
     if (!user) {
       return NextResponse.redirect(new URL("/?auth=tiktok_user_missing", request.url));
     }
 
     const profile = {
-      openId: user.open_id,
+      openId: user.open_id || user.openId || "",
       name: user.display_name || "TikTok User",
       username: user.username || "unknown",
       picture: user.avatar_url || "",
@@ -65,6 +65,8 @@ export async function GET(request) {
     return response;
   } catch (error) {
     console.error("TikTok callback failed", error);
-    return NextResponse.redirect(new URL("/?auth=tiktok_failed", request.url));
+    const msg = String(error?.message || "").toLowerCase();
+    const reason = msg.includes("token request failed") ? "tiktok_failed_token" : msg.includes("user request failed") ? "tiktok_failed_user" : "tiktok_failed";
+    return NextResponse.redirect(new URL(`/?auth=${reason}`, request.url));
   }
 }
