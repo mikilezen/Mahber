@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { buildAuthUrl, generatePkcePair, hasTikTokConfig } from "@/lib/auth/tiktok";
 
+function getCookieDomain() {
+  if (process.env.NODE_ENV !== "production") return undefined;
+  return process.env.AUTH_COOKIE_DOMAIN || ".mahber.social";
+}
+
 export async function GET(request) {
   if (!hasTikTokConfig()) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -13,6 +18,7 @@ export async function GET(request) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+    domain: getCookieDomain(),
     path: "/",
     maxAge: 60 * 10,
   });
@@ -20,6 +26,7 @@ export async function GET(request) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+    domain: getCookieDomain(),
     path: "/",
     maxAge: 60 * 10,
   });

@@ -7,6 +7,16 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   poweredByHeader: false,
   compress: true,
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "mahber.social" }],
+        destination: "https://www.mahber.social/:path*",
+        permanent: true,
+      },
+    ];
+  },
   turbopack: {
     root: dirname,
   },

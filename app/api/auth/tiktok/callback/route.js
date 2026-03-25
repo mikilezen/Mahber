@@ -6,6 +6,11 @@ import {
   hasTikTokConfig,
 } from "@/lib/auth/tiktok";
 
+function getCookieDomain() {
+  if (process.env.NODE_ENV !== "production") return undefined;
+  return process.env.AUTH_COOKIE_DOMAIN || ".mahber.social";
+}
+
 export async function GET(request) {
   if (!hasTikTokConfig()) {
     return NextResponse.redirect(new URL("/?auth=tiktok_not_configured", request.url));
@@ -57,11 +62,26 @@ export async function GET(request) {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
+      domain: getCookieDomain(),
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
-    response.cookies.delete("tiktok_oauth_state");
-    response.cookies.delete("tiktok_oauth_verifier");
+    response.cookies.set("tiktok_oauth_state", "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      domain: getCookieDomain(),
+      path: "/",
+      maxAge: 0,
+    });
+    response.cookies.set("tiktok_oauth_verifier", "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      domain: getCookieDomain(),
+      path: "/",
+      maxAge: 0,
+    });
     return response;
   } catch (error) {
     console.error("TikTok callback failed", error);
