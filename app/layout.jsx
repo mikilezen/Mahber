@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  metadataBase: new URL("https://mahber.platform"),
+  metadataBase: new URL("https://www.mahber.social"),
   title: {
     default: "Mahber Platform | Community Infrastructure for Ethiopia",
     template: "%s | Mahber Platform",
@@ -19,7 +19,7 @@ export const metadata = {
     title: "Mahber Platform",
     description:
       "SEO-ready and performance-optimized community platform architecture for massive scale.",
-    url: "https://mahber.platform",
+    url: "https://www.mahber.social",
     siteName: "Mahber Platform",
     locale: "en_US",
     type: "website",

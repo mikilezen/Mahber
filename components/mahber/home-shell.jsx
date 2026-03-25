@@ -246,12 +246,11 @@ export default function HomeShell() {
 
       if (!mounted) return;
 
-      let hadError = false;
+      let hadCriticalError = false;
 
       if (profileRes.ok) {
         setProfile(profileRes.data?.user || null);
       } else {
-        hadError = true;
         setProfile(null);
       }
 
@@ -261,7 +260,7 @@ export default function HomeShell() {
         setNextCursor(data?.nextCursor ?? null);
         setHasMore(Boolean(data?.hasMore));
       } else {
-        hadError = true;
+        hadCriticalError = true;
         setMahbers([]);
         setNextCursor(null);
         setHasMore(false);
@@ -270,7 +269,6 @@ export default function HomeShell() {
       if (warRes.ok) {
         setWar(warRes.data?.item || null);
       } else {
-        hadError = true;
         setWar(null);
       }
 
@@ -280,13 +278,12 @@ export default function HomeShell() {
         setEmojiOptions(next);
         setCreateForm((prev) => ({ ...prev, emoji: prev.emoji || next[0] || DEFAULT_EMOJI_OPTIONS[0] }));
       } else {
-        hadError = true;
         setEmojiOptions(DEFAULT_EMOJI_OPTIONS);
         setCreateForm((prev) => ({ ...prev, emoji: prev.emoji || DEFAULT_EMOJI_OPTIONS[0] }));
       }
 
-      if (hadError) {
-        setLoadError("Some live data failed to load. Retrying by refresh can help.");
+      if (hadCriticalError) {
+        setLoadError("Main live feed failed to load. Check server environment and refresh.");
       }
     }
 

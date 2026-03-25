@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { getMongoDbOrThrow } from "@/lib/mongodb";
-import { ensureSessionUser } from "@/lib/auth/session";
 import { ensureSuperAdmin } from "@/lib/auth/admin";
 
 export async function GET(request) {
   try {
-    ensureSessionUser(request);
     const db = await getMongoDbOrThrow();
     const items = await db.collection("emojis").find({}).sort({ createdAt: 1 }).toArray();
     return NextResponse.json({ items: items.map((item) => ({ emoji: item.emoji })) });
   } catch (error) {
-    if (error?.code === "LOGIN_REQUIRED") {
-      return NextResponse.json({ ok: false, error: "login_required" }, { status: 401 });
-    }
+    if (error?.code === "MONGO_NOT_CONFIGURED") return NextResponse.json({ items: [] });
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 }

@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { getMongoDbOrThrow } from "@/lib/mongodb";
-import { ensureSessionUser } from "@/lib/auth/session";
 import { ensureSuperAdmin } from "@/lib/auth/admin";
 
 export async function GET(request) {
   try {
-    ensureSessionUser(request);
     const db = await getMongoDbOrThrow();
     const war = await db.collection("wars").findOne({ active: true });
     return NextResponse.json({ item: war || null });
   } catch (error) {
-    if (error?.code === "LOGIN_REQUIRED") {
-      return NextResponse.json({ ok: false, error: "login_required" }, { status: 401 });
-    }
+    if (error?.code === "MONGO_NOT_CONFIGURED") return NextResponse.json({ item: null });
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 }

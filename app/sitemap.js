@@ -1,4 +1,4 @@
-const SITE_URL = "https://mahber.platform";
+const SITE_URL = "https://www.mahber.social";
 
 export default function sitemap() {
   const now = new Date();

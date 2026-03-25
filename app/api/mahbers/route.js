@@ -150,6 +150,19 @@ export async function GET(request) {
     if (error?.code === "LOGIN_REQUIRED") {
       return NextResponse.json({ ok: false, error: "login_required" }, { status: 401 });
     }
+    if (error?.code === "MONGO_NOT_CONFIGURED") {
+      const { searchParams } = new URL(request.url);
+      const slug = searchParams.get("slug");
+      const owner = searchParams.get("owner");
+
+      if (slug) {
+        return NextResponse.json({ item: null }, { status: 404 });
+      }
+      if (owner === "me") {
+        return NextResponse.json({ items: [] });
+      }
+      return NextResponse.json({ total: 0, nextCursor: null, hasMore: false, items: [] });
+    }
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 }
