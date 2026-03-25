@@ -1,7 +1,7 @@
 "use client";
 
-import MahberSocial from "../mahber-social";
+import HomeShell from "@/components/mahber/home-shell";
 
 export default function HomePage() {
-  return <MahberSocial />;
+  return <HomeShell />;
 }

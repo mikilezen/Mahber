@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMongoDbOrThrow } from "@/lib/mongodb";
 import { ensureSessionUser } from "@/lib/auth/session";
-import { getSuperAdminUsername } from "@/lib/auth/admin";
+import { getSuperAdminUsername, isSuperAdminUsername } from "@/lib/auth/admin";
 
 export async function GET(request) {
   try {
@@ -16,7 +16,7 @@ export async function GET(request) {
         username: user.username,
         name: user.name,
       },
-      isSuperAdmin: String(user.username || "").toLowerCase() === getSuperAdminUsername(),
+      isSuperAdmin: isSuperAdminUsername(user.username),
       superAdminUsername: getSuperAdminUsername(),
     });
   } catch (error) {

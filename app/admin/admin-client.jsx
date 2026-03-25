@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 
 export default function AdminClient() {
-  const [status, setStatus] = useState({ loading: true, mongoConnected: false, user: null, superAdminUsername: "mikile" });
+  const [status, setStatus] = useState({ loading: true, mongoConnected: false, user: null, superAdminUsername: "mikilezen" });
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
 
   const [title, setTitle] = useState("Battle of the Week");
@@ -60,32 +62,49 @@ export default function AdminClient() {
   }, [groups, query]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function init() {
-      const statusRes = await fetch("/api/admin/status", { cache: "no-store" });
-      const statusData = await statusRes.json().catch(() => ({}));
+      setInitialLoading(true);
+      setLoadError("");
+
+      const [statusRes, groupsRes, emojisRes] = await Promise.all([
+        fetch("/api/admin/status", { cache: "no-store", signal: controller.signal }),
+        fetch("/api/mahbers?cursor=0&limit=100", { cache: "no-store", signal: controller.signal }),
+        fetch("/api/emojis", { cache: "no-store", signal: controller.signal }),
+      ]);
+
+      if (!statusRes.ok || !groupsRes.ok || !emojisRes.ok) {
+        throw new Error("Failed to load admin data");
+      }
+
+      const [statusData, groupsData, emojisData] = await Promise.all([
+        statusRes.json().catch(() => ({})),
+        groupsRes.json().catch(() => ({})),
+        emojisRes.json().catch(() => ({})),
+      ]);
+
       setStatus({
         loading: false,
         mongoConnected: Boolean(statusData.mongoConnected),
         user: statusData.user || null,
-        superAdminUsername: statusData.superAdminUsername || "mikile",
+        superAdminUsername: statusData.superAdminUsername || "mikilezen",
       });
-
-      const [groupsRes, emojisRes] = await Promise.all([
-        fetch("/api/mahbers?cursor=0&limit=100", { cache: "no-store" }),
-        fetch("/api/emojis", { cache: "no-store" }),
-      ]);
-
-      const groupsData = await groupsRes.json().catch(() => ({}));
-      const emojisData = await emojisRes.json().catch(() => ({}));
 
       setGroups(Array.isArray(groupsData.items) ? groupsData.items : []);
       setEmojiList(Array.isArray(emojisData.items) ? emojisData.items.map((x) => x.emoji) : []);
     }
 
-    init().catch(() => {
-      setStatus((prev) => ({ ...prev, loading: false }));
-      setMessage("Failed to load admin data");
-    });
+    init()
+      .catch((error) => {
+        if (error?.name === "AbortError") return;
+        setStatus((prev) => ({ ...prev, loading: false }));
+        setLoadError("Failed to load admin data");
+        setMessage("Failed to load admin data");
+      })
+      .finally(() => setInitialLoading(false));
+
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -105,19 +124,23 @@ export default function AdminClient() {
     }
 
     const endsAt = Date.now() + 1000 * 60 * 60 * 24;
-    const res = await fetch("/api/wars", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, aSlug, bSlug, postText, endsAt }),
-    });
+    try {
+      const res = await fetch("/api/wars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, aSlug, bSlug, postText, endsAt }),
+      });
 
-    if (res.ok) {
-      setMessage("War round created");
-      return;
+      if (res.ok) {
+        setMessage("War round created");
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      setMessage(data?.error || "Failed to create war");
+    } catch {
+      setMessage("Failed to create war");
     }
-
-    const data = await res.json().catch(() => ({}));
-    setMessage(data?.error || "Failed to create war");
   }
 
   async function handleAddEmoji() {
@@ -127,71 +150,87 @@ export default function AdminClient() {
       return;
     }
 
-    const res = await fetch("/api/emojis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emoji }),
-    });
+    try {
+      const res = await fetch("/api/emojis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setMessage("Failed to add emoji");
+        return;
+      }
+
+      setEmojiInput("");
+      setEmojiList((prev) => (prev.includes(emoji) ? prev : [...prev, emoji]));
+      setMessage("Emoji added");
+    } catch {
       setMessage("Failed to add emoji");
-      return;
     }
-
-    setEmojiInput("");
-    setEmojiList((prev) => (prev.includes(emoji) ? prev : [...prev, emoji]));
-    setMessage("Emoji added");
   }
 
   async function handleDeleteEmoji(emoji) {
-    const res = await fetch("/api/emojis", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emoji }),
-    });
+    try {
+      const res = await fetch("/api/emojis", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setMessage("Failed to remove emoji");
+        return;
+      }
+
+      setEmojiList((prev) => prev.filter((x) => x !== emoji));
+      setMessage("Emoji removed");
+    } catch {
       setMessage("Failed to remove emoji");
-      return;
     }
-
-    setEmojiList((prev) => prev.filter((x) => x !== emoji));
-    setMessage("Emoji removed");
   }
 
   async function handleApproveAllRequests() {
-    const res = await fetch("/api/mahbers", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "approve_all_verify_requests" }),
-    });
+    try {
+      const res = await fetch("/api/mahbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve_all_verify_requests" }),
+      });
 
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setMessage(data?.error || "Failed to approve requests");
-      return;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.error || "Failed to approve requests");
+        return;
+      }
+
+      setGroups((prev) =>
+        prev.map((g) => (g.verifyRequested && !g.verified ? { ...g, verified: true, verifyRequested: false } : g))
+      );
+      setMessage(`Approved ${data.modifiedCount || 0} request(s)`);
+    } catch {
+      setMessage("Failed to approve requests");
     }
-
-    setGroups((prev) =>
-      prev.map((g) => (g.verifyRequested && !g.verified ? { ...g, verified: true, verifyRequested: false } : g))
-    );
-    setMessage(`Approved ${data.modifiedCount || 0} request(s)`);
   }
 
   async function handleToggleVerified(item, nextVerified) {
-    const res = await fetch("/api/mahbers", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, slug: item.slug, verified: nextVerified }),
-    });
+    try {
+      const res = await fetch("/api/mahbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, slug: item.slug, verified: nextVerified }),
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setMessage("Failed to update verification");
+        return;
+      }
+
+      setGroups((prev) => prev.map((g) => (g.id === item.id ? { ...g, verified: nextVerified } : g)));
+      setMessage(nextVerified ? "Verification enabled" : "Verification removed");
+    } catch {
       setMessage("Failed to update verification");
-      return;
     }
-
-    setGroups((prev) => prev.map((g) => (g.id === item.id ? { ...g, verified: nextVerified } : g)));
-    setMessage(nextVerified ? "Verification enabled" : "Verification removed");
   }
 
   return (
@@ -210,6 +249,9 @@ export default function AdminClient() {
           Logged in: {status.user?.username ? `@${status.user.username}` : "No"} | Super Admin: @{status.superAdminUsername}
         </div>
       </div>
+
+        {initialLoading ? <p style={{ color: "#9aa5bf", marginBottom: 14 }}>Loading admin data...</p> : null}
+        {loadError ? <p style={{ color: "#ffb3c1", marginBottom: 14 }}>{loadError}</p> : null}
 
       <div style={{ display: "grid", gap: 16, maxWidth: 980 }}>
         <section style={panelStyle}>

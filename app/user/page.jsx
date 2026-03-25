@@ -5,27 +5,52 @@ import { useEffect, useState } from "react";
 export default function UserPage() {
   const [user, setUser] = useState(null);
   const [ownedMahbers, setOwnedMahbers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
   const [busySlug, setBusySlug] = useState("");
+  const [theme, setTheme] = useState("dark");
+  const [logoutBusy, setLogoutBusy] = useState(false);
 
   useEffect(() => {
+    const next = typeof window !== "undefined" && localStorage.getItem("mahber-theme") === "light" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
     async function load() {
+      setLoading(true);
+      setLoadError("");
       try {
         const [meRes, mineRes] = await Promise.all([
-          fetch("/api/auth/tiktok/me", { cache: "no-store" }),
-          fetch("/api/mahbers?owner=me&limit=50", { cache: "no-store" }),
+          fetch("/api/auth/tiktok/me", { cache: "no-store", signal: controller.signal }),
+          fetch("/api/mahbers?owner=me&limit=50", { cache: "no-store", signal: controller.signal }),
         ]);
+
+        if (!meRes.ok || !mineRes.ok) {
+          throw new Error("Failed to load account data");
+        }
+
         const meData = await meRes.json();
         const mineData = await mineRes.json();
         setUser(meData.user || null);
         setOwnedMahbers(Array.isArray(mineData.items) ? mineData.items : []);
-      } catch {
+      } catch (error) {
+        if (error?.name === "AbortError") return;
         setUser(null);
         setOwnedMahbers([]);
+        setLoadError("Failed to load account data.");
+      } finally {
+        setLoading(false);
       }
     }
 
     load();
+
+    return () => controller.abort();
   }, []);
 
   async function requestVerification(slug) {
@@ -57,15 +82,53 @@ export default function UserPage() {
     }
   }
 
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("mahber-theme", next);
+    setMessage(`Theme changed to ${next}`);
+  }
+
+  async function handleLogout() {
+    setLogoutBusy(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/auth/tiktok/logout", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.error || "Logout failed");
+        return;
+      }
+      window.location.href = "/login";
+    } catch {
+      setMessage("Logout failed");
+    } finally {
+      setLogoutBusy(false);
+    }
+  }
+
   return (
-    <main style={{ padding: 24, color: "#eaf0ff", background: "#07070A", minHeight: "100vh" }}>
+    <main style={{ padding: 24, color: "var(--theme-text)", background: "var(--theme-bg)", minHeight: "100vh" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <h1 style={{ marginBottom: 10, fontSize: 34, letterSpacing: 1 }}>Account</h1>
         <p style={{ color: "#9aa5bf", marginBottom: 20 }}>
           Apply for verification on your mahbers. Super admin can approve requests.
         </p>
 
-        <div style={{ border: "1px solid #23344f", borderRadius: 16, padding: 18, background: "#0e1626", marginBottom: 16 }}>
+        {loading ? (
+          <div style={{ marginBottom: 16, border: "1px solid var(--theme-border)", borderRadius: 16, padding: 18, background: "var(--theme-surface)", color: "var(--theme-muted)" }}>
+            Loading account data...
+          </div>
+        ) : null}
+
+        {loadError ? (
+          <div style={{ marginBottom: 16, border: "1px solid #5a2b3a", borderRadius: 16, padding: 18, background: "#21131a", color: "#ffb3c1" }}>
+            {loadError}
+          </div>
+        ) : null}
+
+        <div style={{ border: "1px solid var(--theme-border)", borderRadius: 16, padding: 18, background: "var(--theme-surface)", marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
           <img
             src={user?.picture || "https://placehold.co/96x96?text=User"}
@@ -85,9 +148,42 @@ export default function UserPage() {
 
           <label style={labelStyle}>Username</label>
           <input style={inputStyle} value={user?.username ? `@${user.username}` : "not-connected"} disabled />
+
+          <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={toggleTheme}
+              style={{
+                border: "1px solid var(--theme-border-2)",
+                background: "var(--theme-surface-2)",
+                color: "var(--theme-text)",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Theme: {theme === "dark" ? "Dark" : "Light"}
+            </button>
+            <button
+              disabled={logoutBusy}
+              onClick={handleLogout}
+              style={{
+                border: "1px solid #9b304a",
+                background: "#7a1f35",
+                color: "#fff",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontWeight: 800,
+                cursor: logoutBusy ? "not-allowed" : "pointer",
+                opacity: logoutBusy ? 0.7 : 1,
+              }}
+            >
+              {logoutBusy ? "Logging out..." : "Logout"}
+            </button>
+          </div>
         </div>
 
-        <div style={{ border: "1px solid #23344f", borderRadius: 16, padding: 18, background: "#0e1626" }}>
+        <div style={{ border: "1px solid var(--theme-border)", borderRadius: 16, padding: 18, background: "var(--theme-surface)" }}>
           <h2 style={{ marginBottom: 12, fontSize: 20 }}>My Mahbers</h2>
           <div style={{ display: "grid", gap: 10 }}>
             {ownedMahbers.length === 0 ? (
@@ -100,7 +196,7 @@ export default function UserPage() {
                     border: "1px solid #2f4465",
                     borderRadius: 12,
                     padding: 12,
-                    background: "#0b1220",
+                    background: "var(--theme-surface-2)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -148,15 +244,15 @@ const labelStyle = {
   display: "block",
   marginTop: 10,
   marginBottom: 6,
-  color: "#9aa5bf",
+  color: "var(--theme-muted)",
   fontSize: 12,
 };
 
 const inputStyle = {
   width: "100%",
-  border: "1px solid #2f4465",
-  background: "#0b1220",
-  color: "#eaf0ff",
+  border: "1px solid var(--theme-border-2)",
+  background: "var(--theme-surface-2)",
+  color: "var(--theme-text)",
   borderRadius: 10,
   padding: "10px 12px",
   opacity: 0.9,

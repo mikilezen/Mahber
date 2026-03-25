@@ -1,6 +1,6 @@
 "use client";
 
-export default function ProfileDock({ profile, onCreate, onProfile, onLogout, onLogin }) {
+export default function ProfileDock({ profile, onCreate, onProfile, onLogin }) {
   if (!profile) {
     return (
       <div
@@ -32,7 +32,7 @@ export default function ProfileDock({ profile, onCreate, onProfile, onLogout, on
             boxShadow: "0 10px 28px rgba(254,44,85,0.36)",
           }}
         >
-          Login
+          T
         </button>
       </div>
     );
@@ -52,44 +52,35 @@ export default function ProfileDock({ profile, onCreate, onProfile, onLogout, on
         backdropFilter: "blur(12px)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
+        <button onClick={onProfile} style={circleBtnStyle("var(--s3)", "var(--txt)")} aria-label="Profile" title="Profile">
           <img
             src={profile?.picture || "https://placehold.co/64x64?text=U"}
             alt="Profile"
-            width={34}
-            height={34}
-            style={{ borderRadius: "50%", objectFit: "cover", border: "1px solid var(--border)" }}
+            width={26}
+            height={26}
+            style={{ borderRadius: "50%", objectFit: "cover" }}
           />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--txt)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {profile?.name || "Guest User"}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {profile?.username ? `@${profile.username}` : "Sign in to sync votes"}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onProfile} style={btnStyle("var(--s3)", "var(--txt)")}>Profile</button>
-          <button onClick={onCreate} style={btnStyle("var(--yellow)", "#000")}>Create</button>
-          <button onClick={onLogout} style={btnStyle("var(--s1)", "var(--muted)")}>Logout</button>
-        </div>
+        </button>
+        <button onClick={onCreate} style={circleBtnStyle("var(--yellow)", "#000")} aria-label="Create" title="Create">+</button>
       </div>
     </div>
   );
 }
 
-function btnStyle(bg, color) {
+function circleBtnStyle(bg, color) {
   return {
     border: "1px solid var(--border)",
     background: bg,
     color,
-    borderRadius: 9,
-    padding: "8px 10px",
+    borderRadius: "50%",
+    width: 44,
+    height: 44,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     fontWeight: 800,
-    fontSize: 12,
+    fontSize: 18,
     cursor: "pointer",
   };
 }

@@ -1,4 +1,11 @@
 :root {
+  --theme-bg: #07070A;
+  --theme-surface: #0e1626;
+  --theme-surface-2: #0b1220;
+  --theme-border: #23344f;
+  --theme-border-2: #2f4465;
+  --theme-text: #eaf0ff;
+  --theme-muted: #9aa5bf;
   --bg: #071224;
   --bg-soft: #0d1d35;
   --card: #10223d;
@@ -8,6 +15,16 @@
   --brand: #32d583;
   --brand-2: #7ce0ff;
   --warn: #ffc857;
+}
+
+:root[data-theme="light"] {
+  --theme-bg: #f6f8fd;
+  --theme-surface: #ffffff;
+  --theme-surface-2: #f3f7ff;
+  --theme-border: #c7d4ea;
+  --theme-border-2: #b9c8e4;
+  --theme-text: #13223f;
+  --theme-muted: #5f7397;
 }
 
 * {

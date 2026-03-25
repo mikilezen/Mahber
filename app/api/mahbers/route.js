@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMongoDbOrThrow } from "@/lib/mongodb";
-import { getSeedMahbers } from "@/lib/mahber-seed";
 import { ensureSessionUser, getSessionUser } from "@/lib/auth/session";
-import { ensureSuperAdmin, getSuperAdminUsername } from "@/lib/auth/admin";
+import { ensureSuperAdmin, isSuperAdminUsername, normalizeUsername } from "@/lib/auth/admin";
 
 export const revalidate = 300;
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -10,21 +9,6 @@ const MAX_PAGE_LIMIT = IS_PROD ? 40 : 100;
 const MAX_NAME_LEN = 80;
 const MAX_DESC_LEN = 600;
 const MAX_LINK_LEN = 220;
-
-async function ensureSeedMahbers(db) {
-  const seeds = getSeedMahbers();
-  const ops = seeds.map((seed) => ({
-    updateOne: {
-      filter: { slug: seed.slug },
-      update: { $setOnInsert: seed },
-      upsert: true,
-    },
-  }));
-
-  if (ops.length > 0) {
-    await db.collection("mahbers").bulkWrite(ops, { ordered: false });
-  }
-}
 
 function slugify(input) {
   return String(input || "mahber")
@@ -67,7 +51,6 @@ export async function GET(request) {
     const safeCursor = Number.isFinite(cursor) && cursor > 0 ? cursor : 0;
 
     const db = await getMongoDbOrThrow();
-    await ensureSeedMahbers(db);
 
     if (owner === "me") {
       const user = ensureSessionUser(request);
@@ -84,19 +67,6 @@ export async function GET(request) {
       let item = await db.collection("mahbers").findOne(
         hasNumericId ? { $or: [{ slug }, { id: parsedId }] } : { slug }
       );
-      if (!item) {
-        const fallbackSeed = getSeedMahbers().find((seed) => seed.slug === slug);
-        if (fallbackSeed) {
-          await db.collection("mahbers").updateOne(
-            { slug: fallbackSeed.slug },
-            { $setOnInsert: fallbackSeed },
-            { upsert: true }
-          );
-          item = await db.collection("mahbers").findOne(
-            hasNumericId ? { $or: [{ slug }, { id: parsedId }] } : { slug }
-          );
-        }
-      }
       if (!item) {
         return NextResponse.json({ item: null }, { status: 404 });
       }
@@ -266,10 +236,10 @@ export async function PATCH(request) {
         return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
       }
 
-      const currentUsername = String(user.username || "").toLowerCase();
-      const ownerUsername = String(target.ownerUsername || "").toLowerCase();
+      const currentUsername = normalizeUsername(user.username);
+      const ownerUsername = normalizeUsername(target.ownerUsername);
       const isOwner = ownerUsername && currentUsername === ownerUsername;
-      const isSuperAdmin = currentUsername === getSuperAdminUsername();
+      const isSuperAdmin = isSuperAdminUsername(currentUsername);
 
       if (!isOwner && !isSuperAdmin) {
         return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -472,7 +442,7 @@ export async function PATCH(request) {
         return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
       }
 
-      if (String(current.ownerUsername || "").toLowerCase() !== String(user.username || "").toLowerCase()) {
+      if (normalizeUsername(current.ownerUsername) !== normalizeUsername(user.username)) {
         return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
       }
 
