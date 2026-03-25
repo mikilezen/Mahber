@@ -82,6 +82,10 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-
 .brand-logo{width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(252,221,9,.2))}
 .logo{font-family:'Black Han Sans',sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(90deg,var(--yellow),var(--fire));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .logo-sub{font-size:11px;display:block;color:var(--muted);letter-spacing:1.5px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;margin-top:-2px}
+.nav-actions{display:flex;align-items:center;gap:8px}
+.nav-profile-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--s3);padding:0;cursor:pointer}
+.nav-profile-avatar{width:100%;height:100%;border-radius:999px;object-fit:cover}
+.nav-login-btn{display:inline-flex;align-items:center;justify-content:center;height:34px;border-radius:999px;border:1px solid #FE2C55;background:#FE2C55;color:#fff;padding:0 12px;font-size:12px;font-weight:800;cursor:pointer}
 .tabs{display:flex;gap:2px;padding:12px 18px 0;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:58px;z-index:190}
 .tab{flex:1;text-align:center;padding:9px 6px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.5px;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase}
 .tab.active{color:var(--yellow);border-bottom-color:var(--yellow)}
@@ -541,7 +545,33 @@ export default function HomeShell() {
             <img src="/assets/Group.png" alt="Mahber logo" className="brand-logo" />
             <div className="logo">MAHBER<span className="logo-sub">ETHIOPIAN MAHBERS</span></div>
           </div>
-          <div />
+          <div className="nav-actions">
+            {profile ? (
+              <button
+                className="nav-profile-btn"
+                onClick={() => {
+                  window.location.href = "/user";
+                }}
+                aria-label="Profile"
+                title="Profile"
+              >
+                <img
+                  src={profile?.picture || "https://placehold.co/64x64?text=U"}
+                  alt="Profile"
+                  className="nav-profile-avatar"
+                />
+              </button>
+            ) : (
+              <button
+                className="nav-login-btn"
+                onClick={() => {
+                  window.location.href = "/login";
+                }}
+              >
+                Login
+              </button>
+            )}
+          </div>
         </nav>
 
         <div className="tabs">
