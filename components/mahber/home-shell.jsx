@@ -83,6 +83,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-
 .logo{font-family:'Black Han Sans',sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(90deg,var(--yellow),var(--fire));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .logo-sub{font-size:11px;display:block;color:var(--muted);letter-spacing:1.5px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;margin-top:-2px}
 .nav-actions{display:flex;align-items:center;gap:8px}
+.nav-create-btn{display:inline-flex;align-items:center;justify-content:center;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--yellow);color:#000;padding:0 12px;font-size:12px;font-weight:900;cursor:pointer;letter-spacing:.2px}
 .nav-profile-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--s3);padding:0;cursor:pointer}
 .nav-profile-avatar{width:100%;height:100%;border-radius:999px;object-fit:cover}
 .nav-login-btn{display:inline-flex;align-items:center;justify-content:center;height:34px;border-radius:999px;border:1px solid #FE2C55;background:#FE2C55;color:#fff;padding:0 12px;font-size:12px;font-weight:800;cursor:pointer}
@@ -556,20 +557,30 @@ export default function HomeShell() {
           </div>
           <div className="nav-actions">
             {profile ? (
-              <button
-                className="nav-profile-btn"
-                onClick={() => {
-                  window.location.href = "/user";
-                }}
-                aria-label="Profile"
-                title="Profile"
-              >
-                <img
-                  src={profile?.picture || "https://placehold.co/64x64?text=U"}
-                  alt="Profile"
-                  className="nav-profile-avatar"
-                />
-              </button>
+              <>
+                <button
+                  className="nav-create-btn"
+                  onClick={() => setTab("create")}
+                  aria-label="Create Mahber"
+                  title="Create Mahber"
+                >
+                  + Create
+                </button>
+                <button
+                  className="nav-profile-btn"
+                  onClick={() => {
+                    window.location.href = "/user";
+                  }}
+                  aria-label="Profile"
+                  title="Profile"
+                >
+                  <img
+                    src={profile?.picture || "https://placehold.co/64x64?text=U"}
+                    alt="Profile"
+                    className="nav-profile-avatar"
+                  />
+                </button>
+              </>
             ) : (
               <button
                 className="nav-login-btn"
